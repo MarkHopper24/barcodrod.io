@@ -17,6 +17,13 @@
 ## Overview
 barcodrod.io is a free, modern barcode and QR code toolkit for Windows. Decode (read) 17 different barcode types using the Windows Snipping Tool, an image file, your clipboard, or even your webcam. Encode (generate) up to 13 different types of barcodes. barcodrod.io is built on the WinAppSDK, leveraging WinUI3, .NET 6, and the ZXing.Net library.
 
+<p align="center">
+<img src = https://github.com/MarkHopper24/barcodrod.io/blob/public/Assets/StoreScreenshot%20(2).png>
+<br>
+<br>
+<img src = https://github.com/MarkHopper24/barcodrod.io/blob/public/Assets/StoreScreenshot%20(3).png>
+</p>
+
 Includes support for the following barcode formats:
 - QR_CODE (Decode and encode)
 - CODE_128 (Decode and encode)
@@ -41,6 +48,10 @@ This project is a work in progress. Any contributions, suggestions, fixes, and f
 ## Emailware
 
 barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you liked using this app or it has helped you in any way, I'd like you send me an email at <mark.hopper24@gmail.com> letting me know anything you'd want to share about this software. I'd really appreciate it!
+
+## Usage
+
+[COMING SOON] You can install barcodrod.io from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ).
 
 ## Credits
 
