@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "barcodrod.io (Package)": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": false
+    },
+    "barcodrod.io (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
