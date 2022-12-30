@@ -34,7 +34,7 @@ You can install barcodrod.io using the following methods:
 ```
 winget install --name barcodrod.io
 ```
-3. Downloading source and building yourself in Visual Studio using the provided .sln file
+3. Downloading source and building on your own in Visual Studio using the provided .sln file
 
 ## Usage
 Includes support for the following barcode formats:
