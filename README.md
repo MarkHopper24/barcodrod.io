@@ -49,7 +49,7 @@ barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you
 
 ## Usage
 
-[COMING SOON] You can install barcodrod.io from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ).
+You can install barcodrod.io from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ).
 
 ## Credits
 
