@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="#overview">Overview</a> •
+  <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a>
@@ -24,15 +25,18 @@ barcodrod.io is built on the WinAppSDK, WinUI3, .NET 6, and the ZXing.Net librar
 <br>
 </p>
 
-## Usage
+## Installation
 You can install barcodrod.io using the following methods: 
----From the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ)
 
----From Windows Package Manager using winget via command line
+1. From the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ)
+
+2. From Windows Package Manager using winget via command line
 ```
 winget install --name barcodrod.io
 ```
+3. Downloading source and building yourself in Visual Studio using the provided .sln file
 
+## Usage
 Includes support for the following barcode formats:
 - QR_CODE (Decode and encode)
 - CODE_128 (Decode and encode)
