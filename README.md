@@ -22,6 +22,9 @@ barcodrod.io is a free, modern barcode and QR code toolkit for Windows. Decode (
 <br>
 </p>
 
+## Usage
+You can install barcodrod.io from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ).
+
 Includes support for the following barcode formats:
 - QR_CODE (Decode and encode)
 - CODE_128 (Decode and encode)
@@ -46,10 +49,6 @@ This project is a work in progress. Any contributions, suggestions, fixes, and f
 ## Emailware
 
 barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you liked using this app or it has helped you in any way, I'd like you send me an email at <mark.hopper24@gmail.com> letting me know anything you'd want to share about this software. I'd really appreciate it!
-
-## Usage
-
-You can install barcodrod.io from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ).
 
 ## Credits
 
