@@ -1,0 +1,68 @@
+﻿<Page
+    x:Class="barcodrod.io.Views.EncodePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    x:Name="ePage"
+    SizeChanged="SizeChangedEventHandler">
+
+    <Grid>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*">
+            </RowDefinition>
+        </Grid.RowDefinitions>
+        <StackPanel x:Name="EncodePanel" Grid.Column="0" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Height="Auto">
+            <Button x:Name="EncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"  VerticalAlignment="Bottom" Margin="0,0,0,5" Tapped="CreateBarcode" >
+                <StackPanel Orientation="Horizontal"  >
+                    <SymbolIcon  Symbol="Accept"/>
+                    <TextBlock  Text="Create Barcode"  Margin="10"/>
+                </StackPanel>
+            </Button>
+            <ListBox x:Name="BarcodeSelector"  Padding="0,0,16,0" SelectedValue="QR_CODE" HorizontalAlignment="Right" HorizontalContentAlignment="Center" Height="360" MinHeight="20" Background="Transparent">
+                <x:String>QR_CODE</x:String>
+                <x:String>CODE_128</x:String>
+                <x:String>CODE_39</x:String>
+                <x:String>EAN_8</x:String>
+                <x:String>ITF</x:String>
+                <x:String>UPC_A</x:String>
+                <x:String>UPC_E</x:String>
+                <x:String>CODABAR</x:String>
+                <x:String>DATA_MATRIX</x:String>
+                <x:String>PDF_417</x:String>
+                <x:String>AZTEC</x:String>
+                <x:String>MSI</x:String>
+                <x:String>PLESSEY</x:String>
+            </ListBox>
+
+        </StackPanel>
+
+
+        <StackPanel x:Name="TxtStackPanel" Grid.Column="1" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch"  Height="Auto" >
+            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0"  Margin="0,0,0,0" MinHeight="300"
+                 AcceptsReturn="True" TextWrapping="Wrap" 
+                      IsEnabled="True" VerticalAlignment="Stretch"  Height="Auto"  ScrollViewer.VerticalScrollBarVisibility="Visible" PlaceholderText="Enter text to encode here."/>
+            
+            <TextBlock x:Name="EncodeError" Margin="0,10,0,0" TextWrapping="WrapWholeWords"   HorizontalAlignment="Center" Height="auto" Width="Auto"   FontStretch="Condensed" VerticalAlignment="Bottom" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Width="Auto" HorizontalAlignment="Center" VerticalAlignment="Top" Height="Auto" >
+            <CommandBar DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True" HorizontalAlignment="Center">
+                <CommandBar.PrimaryCommands>
+                    <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage" IsEnabled="False"/>
+                    <AppBarSeparator />
+                    <AppBarButton x:Name="OpenImageButton" Icon="OpenLocal" Label="Open Image" Click="OpenImage" IsEnabled="False"/>
+                </CommandBar.PrimaryCommands>
+            </CommandBar>
+            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="200" VerticalAlignment="Top" Margin="20,0,0,0"></Image>
+        </StackPanel>
+
+    </Grid>
+</Page>
