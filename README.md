@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="#overview">Overview</a> •
+  <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a>
@@ -24,27 +25,38 @@ barcodrod.io is built on the WinAppSDK, WinUI3, .NET 6, and the ZXing.Net librar
 <br>
 </p>
 
-## Usage
-You can install barcodrod.io from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ).
+## Installation
+Method 1: Directly from the Microsoft Store [HERE](https://www.microsoft.com/store/apps/9PHMXNX36SZZ)
 
+Method 2: From Windows Package Manager using winget via command line
+```
+winget install --name barcodrod.io
+```
+Method 3: Downloading source and building on your own in Visual Studio using the provided .sln file
+
+## Usage
 Includes support for the following barcode formats:
-- QR_CODE (Decode and encode)
-- CODE_128 (Decode and encode)
-- CODE_39 (Decode and encode)
-- EAN_13 (Decode)
-- EAN_8 (Decode and encode)
-- ITF (Decode and encode)
-- UPC_A (Decode and encode)
-- UPC_E (Decode and encode)
-- CODABAR (Decode and encode)
-- DATA_MATRIX (Decode and encode)
-- MAXICODE (Decode)
-- PDF_417 (Decode and encode)
-- RSS_14 (Decode)
-- RSS_EXPANDED (Decode)
-- AZTEC (Decode and encode)
-- MSI (Decode and encode)
-- PLESSEY (Decode and encode)
+
+Decode and encode:
+- QR_CODE
+- CODE_128
+- CODE_39
+- EAN_8
+- ITF
+- UPC_A
+- UPC_E
+- CODABAR
+- DATA_MATRIX
+- PDF_417
+- AZTEC
+- MSI
+- PLESSEY
+
+Decode only:
+- MAXICODE
+- RSS_14
+- RSS_EXPANDED
+- EAN_13
 
 This project is a work in progress. Any contributions, suggestions, fixes, and feature requests are welcome.
 
@@ -56,7 +68,7 @@ barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you
 
 This software would not have been possible without the use of the following tools, resources, and open source packages:
 
-- [Michael Jahn and the rest of the contributors to the ZXing.Net .NET port of the ZXing library](https://github.com/micjahn/ZXing.Net)
+- [Michael Jahn and the rest of the contributors to the ZXing.Net .NET port of the ZXing Java library](https://github.com/micjahn/ZXing.Net)
 - [Windows Snipping Tool](https://www.microsoft.com/store/productId/9MZ95KL8MR0L)
 - [@amitmerchant1990](https://github.com/amitmerchant1990/electron-markdownify#readme) (readme inspiration)
 
@@ -66,5 +78,5 @@ This software would not have been possible without the use of the following tool
 
 ---
 
-> GitHub [@MarkHopper24](https://github.com/MarkHopper24) &nbsp;&middot;&nbsp;
+> GitHub [MarkHopper24](https://github.com/MarkHopper24) &nbsp;&middot;&nbsp;
 > Twitter [@Mark_Hopper24](https://twitter.com/Mark_Hopper24)
