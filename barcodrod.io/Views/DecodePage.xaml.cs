@@ -13,6 +13,7 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
 using Windows.Storage;
+using WinRT;
 using ZXing.Windows.Compatibility;
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
@@ -45,9 +46,9 @@ public partial class DecodePage : Page
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
-        if (dPage.ActualHeight > 150)
+        if (dPage.ActualHeight > 100)
         {
-            var size = dPage.ActualHeight - 50 - TxtCommandBar.ActualHeight;
+            var size = dPage.ActualHeight - (TxtCommandBar.ActualHeight *2);
             BarcodeViewer.MaxHeight = size;
             TxtActivityLog.MaxHeight = size;
             BarcodeViewer.MinHeight = size;
@@ -199,6 +200,7 @@ public partial class DecodePage : Page
     {
         var timestamp = DateTime.Now;
         var uri = new System.Uri("ms-screenclip:");
+        App.MainWindow.Hide();
         await (Windows.System.Launcher.LaunchUriAsync(uri)).AsTask();
         var screenshotFolder =
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Screenshots\";
@@ -223,7 +225,10 @@ public partial class DecodePage : Page
 
         if (ourSnippingTool != null)
         {
+            //hide the main app window so the user can't see it
+            
             await ourSnippingTool.WaitForExitAsync();
+            App.MainWindow.Show();
         }
 
         DateTime lastWritten = Directory.GetLastWriteTime(screenshotFolder);

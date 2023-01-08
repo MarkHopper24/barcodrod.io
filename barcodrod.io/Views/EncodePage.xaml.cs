@@ -26,13 +26,17 @@ public sealed partial class EncodePage : Page
     {
         if (ePage.ActualHeight > 150)
         {
-            var size = ePage.ActualHeight - EncodeButton.ActualHeight - 60;
-            BarcodeViewer.MaxHeight = size;
-            BarcodeViewer.MinHeight = size;
-            TxtActivityLog.MaxHeight = size;
-            TxtActivityLog.MinHeight = size;
-            BarcodeSelector.MaxHeight = size;
-            BarcodeSelector.MinHeight = size;
+            var thickness = new Thickness(0, SaveImageButton.ActualHeight, 0, 0);
+            var size = ePage.ActualHeight - EncodeButton.ActualHeight;
+            BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
+            BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
+            TxtActivityLog.MaxHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight*2);
+            TxtActivityLog.MinHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight * 2);
+            //TxtActivityLog.Margin = thickness;
+            
+            
+            BarcodeSelector.MaxHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
+            BarcodeSelector.MinHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
             //TxtActivityLog.Height = dPage.ActualHeight - 30 - TxtCommandBar.ActualHeight;
             //TxtActivityLog.MaxHeight = TxtStackPanel.ActualHeight - 40 - TxtCommandBar.ActualHeight;
         }
@@ -42,7 +46,7 @@ public sealed partial class EncodePage : Page
     {
         //ViewModel = App.GetService<EncodeViewModel>();
         InitializeComponent();
-        //BarcodeSelector.MinHeight = TxtActivityLog.ActualHeight - EncodeButton.ActualHeight;
+        BarcodeSelector.MinHeight = TxtActivityLog.ActualHeight;
     }
 
 
@@ -57,13 +61,40 @@ public sealed partial class EncodePage : Page
         //set the writer formation to the selected format
         writer.Format = (ZXing.BarcodeFormat)Enum.Parse(typeof(ZXing.BarcodeFormat), format);
 
-        writer.Options = new ZXing.Common.EncodingOptions
+        //store the text of userWidth and userHeight into two variables
+
+        int defaultHeight = 800;
+        int defaultWidth = 800;
+        int height;
+        int width;
+        //check if the user entered a value for width and height and it is a number
+        if (int.TryParse(userHeight.Text, out height) == true) {
+            writer.Options.Height = height;
+        }
+        else
         {
-            Height = 800,
-            Width = 800,
-            PureBarcode = true,
-            Margin = 0
-        };
+            writer.Options.Height = defaultHeight;
+        }
+        if (int.TryParse(userWidth.Text, out width) == true)
+        {
+            writer.Options.Width = width;
+        }
+        else
+        {
+            writer.Options.Width = defaultWidth;
+        }
+        writer.Options.PureBarcode = true;
+        writer.Options.Margin = 0;
+
+
+
+        //writer.Options = new ZXing.Common.EncodingOptions
+        //{
+            //Width = width,
+            //Height = height,
+        //    PureBarcode = true,
+           // Margin = 0
+      //  };
         if (TxtActivityLog.Text != null && TxtActivityLog.Text != "")
         {
             try
@@ -73,6 +104,7 @@ public sealed partial class EncodePage : Page
                 lastEncoded = barcode;
                 SaveImageButton.IsEnabled = true;
                 EncodeError.Text = "";
+
             }
             catch (Exception ex)
             {

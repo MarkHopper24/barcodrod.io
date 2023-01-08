@@ -21,7 +21,7 @@
             </RowDefinition>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Column="0" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" ScrollViewer.VerticalScrollBarVisibility="Auto" >
+        <StackPanel x:Name="ButtonStackPanel" Grid.Column="0" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" ScrollViewer.VerticalScrollBarVisibility="Auto" >
             <Button x:Name="DecodeFromSnippingToolButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Tapped="DecodeFromSnippingTool">
                 <StackPanel Orientation="Horizontal" >
                     <SymbolIcon  Symbol="Cut"/>
@@ -52,7 +52,7 @@
                     <TextBlock Text="Clear All"  Margin="10" IsColorFontEnabled="True"/>
                 </StackPanel>
             </Button>
-            <InfoBar x:Name="BarcodeType" Margin="0,10,0,0"  IsOpen="False" Severity="Success" HorizontalAlignment="Center" Width="auto" Height="auto" IsClosable="False" />
+            <InfoBar x:Name="BarcodeType" Margin="0,5,0,0"  IsOpen="False" Severity="Success" HorizontalAlignment="Center" Width="auto" Height="auto" IsClosable="False"  />
 
         </StackPanel>
 
@@ -66,7 +66,7 @@
                     <AppBarButton x:Name="OpenTextButton" Icon="OpenWith" Label="Open Text" Click="OpenText"   IsEnabled="False"  />
                 </CommandBar.PrimaryCommands>
             </CommandBar>
-            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0"  Margin="6,0,30,0" MinHeight="200" Height="Auto"
+            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0"  Margin="0,0,30,0" MinHeight="120"
                  AcceptsReturn="True" TextWrapping="Wrap" 
                       IsEnabled="False" VerticalAlignment="Top"    ScrollViewer.VerticalScrollBarVisibility="Auto" PlaceholderText="Pick a tool on the left to begin decoding."/>
 
@@ -80,7 +80,7 @@
                     <AppBarButton x:Name="OpenImageButton" Icon="OpenLocal" Label="Open Image" Click="OpenImage" IsEnabled="False"/>
                 </CommandBar.PrimaryCommands>
             </CommandBar>
-            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="200"/>
+            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="180"/>
             <CommandBar x:Name ="TakePhotoBar" DefaultLabelPosition="Right" Visibility="Collapsed" HorizontalAlignment="Center">
                 <AppBarButton x:Name="TakePhotoButton" Label="Take Photo" Icon="Camera" IsEnabled="False" Click="CapturePhoto_Click" Visibility="Collapsed" HorizontalAlignment="Center" >
                 </AppBarButton>
