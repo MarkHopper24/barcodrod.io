@@ -1,4 +1,4 @@
-﻿<windowex:WindowEx
+<windowex:WindowEx
     x:Class="barcodrod.io.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -8,7 +8,7 @@
     xmlns:windowex="using:WinUIEx"
     MinWidth="350"
     Width="1735"
-    Height="800"
+    Height="600"
     PersistenceId="MainWindow"
     mc:Ignorable="d">
     <windowex:WindowEx.Backdrop>
