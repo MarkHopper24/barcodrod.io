@@ -6,7 +6,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using ZXing;
+using ZXing.Common;
 using ZXing.Windows.Compatibility;
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
@@ -26,13 +28,11 @@ public sealed partial class EncodePage : Page
     {
         if (ePage.ActualHeight > 150)
         {
-            var thickness = new Thickness(0, SaveImageButton.ActualHeight, 0, 0);
             var size = ePage.ActualHeight - EncodeButton.ActualHeight;
-            BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
+            //BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
             BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
             TxtActivityLog.MaxHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight*2);
             TxtActivityLog.MinHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight * 2);
-            //TxtActivityLog.Margin = thickness;
             
             
             BarcodeSelector.MaxHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
@@ -46,13 +46,29 @@ public sealed partial class EncodePage : Page
     {
         //ViewModel = App.GetService<EncodeViewModel>();
         InitializeComponent();
-        BarcodeSelector.MinHeight = TxtActivityLog.ActualHeight;
+        BarcodeSelector.MinHeight = ePage.ActualHeight - EncodeButton.ActualHeight;
+        BarcodeSelector.MaxHeight = ePage.ActualHeight - EncodeButton.ActualHeight;
+    }
+
+    //function to copy the decoded bitmap to the user's clipboard as a pastable image
+    private async void CopyImage(object sender, RoutedEventArgs e)
+    {
+        if (lastEncoded != null)
+        {
+            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+            lastEncoded.Save(file.Path, ImageFormat.Png);
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetBitmap(RandomAccessStreamReference.CreateFromFile(file));
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
     }
 
 
     //function to create a barcode from text
     private void CreateBarcode(object sender, RoutedEventArgs e)
     {
+        if (lastEncoded != null)
+        { lastEncoded.Dispose(); }
         if (BarcodeSelector.SelectedItem == null)
         {
             return;
@@ -68,13 +84,15 @@ public sealed partial class EncodePage : Page
         int height;
         int width;
         //check if the user entered a value for width and height and it is a number
-        if (int.TryParse(userHeight.Text, out height) == true) {
+        if (int.TryParse(userHeight.Text, out height) == true) 
+        {
             writer.Options.Height = height;
         }
         else
         {
             writer.Options.Height = defaultHeight;
         }
+
         if (int.TryParse(userWidth.Text, out width) == true)
         {
             writer.Options.Width = width;
@@ -86,30 +104,26 @@ public sealed partial class EncodePage : Page
         writer.Options.PureBarcode = true;
         writer.Options.Margin = 0;
 
-
-
-        //writer.Options = new ZXing.Common.EncodingOptions
-        //{
-            //Width = width,
-            //Height = height,
-        //    PureBarcode = true,
-           // Margin = 0
-      //  };
         if (TxtActivityLog.Text != null && TxtActivityLog.Text != "")
         {
             try
             {
                 Bitmap barcode = writer.WriteAsBitmap(TxtActivityLog.Text);
                 BitmapToImageSource(barcode);
+                BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
+                BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
                 lastEncoded = barcode;
                 SaveImageButton.IsEnabled = true;
+                CopyImageButton.IsEnabled = true;
                 EncodeError.Text = "";
 
             }
             catch (Exception ex)
             {
                 EncodeError.Text = ex.Message;
-
+                SaveImageButton.IsEnabled = false;
+                CopyImageButton.IsEnabled = false;
+                
 
             }
 
@@ -128,6 +142,10 @@ public sealed partial class EncodePage : Page
             Image image = new Image();
             image.Source = bitmapimage;
             BarcodeViewer.SetValue(Image.SourceProperty, image.Source);
+            await memory.FlushAsync();
+
+            
+            
         }
     }
 
@@ -157,10 +175,12 @@ public sealed partial class EncodePage : Page
 
     private async void SaveImage(object sender, RoutedEventArgs e)
     {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
+        
         var window = new Microsoft.UI.Xaml.Window();
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.SuggestedFileName = "Generated" + BarcodeSelector.SelectedItem;
+        picker.SuggestedFileName = timestamp + "." + BarcodeSelector.SelectedItem;
 
 
         picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
@@ -206,8 +226,5 @@ public sealed partial class EncodePage : Page
 
     }
 
-    private void ePage_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
 
-    }
 }

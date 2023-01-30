@@ -75,13 +75,15 @@
         <StackPanel Grid.Column="2" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="Auto" >
             <CommandBar DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True" HorizontalAlignment="Center">
                 <CommandBar.PrimaryCommands>
+                    <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False"/>
+                    <AppBarSeparator />
                     <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage" IsEnabled="False"/>
                     <AppBarSeparator />
                     <AppBarButton x:Name="OpenImageButton" Icon="OpenLocal" Label="Open Image" Click="OpenImage" IsEnabled="False"/>
                 </CommandBar.PrimaryCommands>
             </CommandBar>
-            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="180"/>
-            <CommandBar x:Name ="TakePhotoBar" DefaultLabelPosition="Right" Visibility="Collapsed" HorizontalAlignment="Center">
+            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="180" VerticalAlignment="Top"/>
+            <CommandBar x:Name ="TakePhotoBar" DefaultLabelPosition="Right" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Top" >
                 <AppBarButton x:Name="TakePhotoButton" Label="Take Photo" Icon="Camera" IsEnabled="False" Click="CapturePhoto_Click" Visibility="Collapsed" HorizontalAlignment="Center" >
                 </AppBarButton>
             </CommandBar>

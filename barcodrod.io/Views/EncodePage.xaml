@@ -26,7 +26,7 @@
                     <TextBlock  Text="Create Barcode"  Margin="10"/>
                 </StackPanel>
             </Button>
-            <ListBox x:Name="BarcodeSelector"  Padding="0,0,16,0" SelectedValue="QR_CODE" HorizontalAlignment="Right" HorizontalContentAlignment="Center" Height="200" MinHeight="20" Background="Transparent" Width="Auto" Margin="0,10,0,0">
+            <ListBox x:Name="BarcodeSelector"  Padding="0,0,16,0" SelectedValue="QR_CODE" HorizontalAlignment="Right" HorizontalContentAlignment="Center" Height="Auto" MinHeight="20" Background="Transparent" Width="Auto" Margin="0,10,0,0">
                 <x:String>QR_CODE</x:String>
                 <x:String>CODE_128</x:String>
                 <x:String>CODE_39</x:String>
@@ -47,29 +47,31 @@
 
 
         <StackPanel x:Name="TxtStackPanel" Grid.Column="1" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch"  Height="Auto" >
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,10" VerticalAlignment="Stretch" ToolTipService.ToolTip="Support for custom deminsions may have bugs and not all barcodes will support all aspect ratios. If you experience issues, please use the default dimensions (800x800).">
-                <TextBlock x:Name="userWidth" Text="Width:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,10" VerticalAlignment="Stretch">
+                <TextBlock  Text="Width:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <TextBox x:Name ="userHeight" PlaceholderText="800" HorizontalAlignment="Stretch" Margin="0,0,25,0"/>
                 <TextBlock Text="Height:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <TextBox  PlaceholderText="800" HorizontalAlignment="Stretch"/>
+                <TextBox x:Name="userWidth"  PlaceholderText="800" HorizontalAlignment="Stretch"/>
             </StackPanel>
-            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0" Margin="0,6,30,0" MinHeight="200"
+            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0" Margin="0,6,30,0" MinHeight="200" 
                  AcceptsReturn="True" TextWrapping="Wrap" 
-                      IsEnabled="True" VerticalAlignment="Stretch"  Height="Auto"  ScrollViewer.VerticalScrollBarVisibility="Auto" PlaceholderText="Enter text to encode here."/>
+                      IsEnabled="True" VerticalAlignment="Stretch"   ScrollViewer.VerticalScrollBarVisibility="Auto" PlaceholderText="Enter text to encode here."/>
             
             <TextBlock x:Name="EncodeError" Margin="0,10,0,0" TextWrapping="WrapWholeWords"   HorizontalAlignment="Center" Height="auto" Width="Auto"   FontStretch="Condensed" VerticalAlignment="Bottom" />
 
         </StackPanel>
 
-        <StackPanel Grid.Column="2"  HorizontalAlignment="Center" Height="Auto" VerticalAlignment="Stretch" >
+        <StackPanel Grid.Column="2"  Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="Auto">
             <CommandBar DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True" HorizontalAlignment="Center">
                 <CommandBar.PrimaryCommands>
+                    <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False"/>
+                    <AppBarSeparator />
                     <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage" IsEnabled="False"/>
                     <AppBarSeparator />
                     <AppBarButton x:Name="OpenImageButton" Icon="OpenLocal" Label="Open Image" Click="OpenImage" IsEnabled="False"/>
                 </CommandBar.PrimaryCommands>
             </CommandBar>
-            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False"  Width="Auto" Height="Auto" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,0,0,0"></Image>
+            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="180" VerticalAlignment="Top" HorizontalAlignment="Stretch"/>
         </StackPanel>
 
     </Grid>

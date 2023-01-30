@@ -13,6 +13,7 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using WinRT;
 using ZXing.Windows.Compatibility;
 using Image = Microsoft.UI.Xaml.Controls.Image;
@@ -46,6 +47,9 @@ public partial class DecodePage : Page
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
+
+        
+
         if (dPage.ActualHeight > 100)
         {
             var size = dPage.ActualHeight - (TxtCommandBar.ActualHeight *2);
@@ -148,7 +152,7 @@ public partial class DecodePage : Page
             TxtActivityLog.IsEnabled = true;
             SaveImageButton.IsEnabled = true;
             //OpenImageButton.IsEnabled = true;
-            //CopyImageButton.IsEnabled = true;
+            CopyImageButton.IsEnabled = true;
             SaveTextButton.IsEnabled = true;
 
             CopyTextButton.IsEnabled = true;
@@ -159,7 +163,7 @@ public partial class DecodePage : Page
             TxtActivityLog.IsEnabled = false;
             SaveImageButton.IsEnabled = false;
             OpenImageButton.IsEnabled = false;
-            //CopyImageButton.IsEnabled = false;
+            CopyImageButton.IsEnabled = false;
             SaveTextButton.IsEnabled = false;
             OpenTextButton.IsEnabled = false;
             CopyTextButton.IsEnabled = false;
@@ -356,10 +360,11 @@ public partial class DecodePage : Page
 
     private async void SaveImage(object sender, RoutedEventArgs e)
     {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
         var window = new Microsoft.UI.Xaml.Window();
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.SuggestedFileName = "DecodedBarcode";
+        picker.SuggestedFileName = timestamp + "." + lastDecodedType;
 
 
         picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
@@ -409,19 +414,32 @@ public partial class DecodePage : Page
     {
         if (lastSavedlocation != "" && lastSavedlocation != null)
         {
-
             var options = new Windows.System.LauncherOptions();
-            //options.DisplayApplicationPicker = true;
+            options.DisplayApplicationPicker = true;
             await Windows.System.Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(lastSavedlocation), options);
+        }
+    }
+
+    //function to copy the decoded bitmap to the user's clipboard as a pastable image
+    private async void CopyImage(object sender, RoutedEventArgs e)
+    {
+        if (lastDecoded != null)
+        {
+            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+            lastDecoded.Save(file.Path, ImageFormat.Png);
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetBitmap(RandomAccessStreamReference.CreateFromFile(file));
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
     }
 
     private async void SaveText(object sender, RoutedEventArgs e)
     {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
         var window = new Microsoft.UI.Xaml.Window();
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.SuggestedFileName = "DecodedBarcode";
+        picker.SuggestedFileName = timestamp;
 
         picker.FileTypeChoices.Add("Text", new List<string>() { ".txt" });
 
@@ -475,6 +493,7 @@ public partial class DecodePage : Page
             //CopyImageButton.IsEnabled = false;
             OpenImageButton.IsEnabled = false;
             SaveImageButton.IsEnabled = false;
+            CopyImageButton.IsEnabled = false;
             TakePhotoButton.IsEnabled = true;
             TakePhotoButton.Visibility = Visibility.Visible;
             TakePhotoBar.IsEnabled = true;
