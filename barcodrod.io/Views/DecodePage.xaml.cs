@@ -23,9 +23,6 @@ namespace barcodrod.io.Views;
 
 public partial class DecodePage : Page
 {
-
-
-
     private readonly BarcodeReader reader = new BarcodeReader();
     private MediaCapture mediaCaptureManager;
     private MediaFrameReader mediaFrameReader;
@@ -44,22 +41,17 @@ public partial class DecodePage : Page
         get;
     }
 
-
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
-
-        
-
         if (dPage.ActualHeight > 100)
         {
-            var size = dPage.ActualHeight - (TxtCommandBar.ActualHeight *2);
+            var size = dPage.ActualHeight - (TxtCommandBar.ActualHeight * 2);
             BarcodeViewer.MaxHeight = size;
             TxtActivityLog.MaxHeight = size;
             BarcodeViewer.MinHeight = size;
             TxtActivityLog.MinHeight = size;
         }
     }
-
 
     protected async override void OnNavigatedFrom(NavigationEventArgs e)
     {
@@ -71,11 +63,8 @@ public partial class DecodePage : Page
         }
     }
 
-
     public DecodePage()
     {
-
-
         //ViewModel = App.GetService<DecodeViewModel>();
         InitializeComponent();
         //TxtActivityLog.TextAlignment = TextAlignment.Left;
@@ -104,8 +93,6 @@ public partial class DecodePage : Page
         };
     }
 
-
-
     public string DecodeBitmap(Bitmap bitmap)
     {
         OpenTextButton.IsEnabled = false;
@@ -116,7 +103,6 @@ public partial class DecodePage : Page
             var result = "No barcode found. Please try again.";
             stateManager(false);
             return result;
-
         }
         else
         {
@@ -128,7 +114,6 @@ public partial class DecodePage : Page
             return result;
         }
     }
-
 
     public bool SilentDecodeBitmap(Bitmap bitmap)
     {
@@ -174,8 +159,6 @@ public partial class DecodePage : Page
 
     private async void ClearState(object sender, RoutedEventArgs e)
     {
-
-
         TakePhotoButton.IsEnabled = false;
         TakePhotoBar.Visibility = Visibility.Collapsed;
         TakePhotoButton.Visibility = Visibility.Collapsed;
@@ -224,13 +207,12 @@ public partial class DecodePage : Page
                 TxtActivityLog.Text = "Unable to determine if Snipping Tool succesfully launched.";
                 return;
             }
-
         }
 
         if (ourSnippingTool != null)
         {
             //hide the main app window so the user can't see it
-            
+
             await ourSnippingTool.WaitForExitAsync();
             App.MainWindow.Show();
         }
@@ -285,7 +267,6 @@ public partial class DecodePage : Page
             var bit = await data.OpenReadAsync();
             System.IO.Stream stream = bit.AsStreamForRead();
             System.Drawing.Bitmap bitmap = new Bitmap(stream);
-
             var result = DecodeBitmap(bitmap);
             TxtActivityLog.Text = result;
             BitmapToImageSource(bitmap);
@@ -339,11 +320,7 @@ public partial class DecodePage : Page
             TxtActivityLog.Text = result;
             BitmapToImageSource(bitmap);
         }
-
     }
-
-
-
 
     public async void SaveBitmapToFile(Bitmap bitmap, StorageFile file)
     {
@@ -365,8 +342,6 @@ public partial class DecodePage : Page
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
         picker.SuggestedFileName = timestamp + "." + lastDecodedType;
-
-
         picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
         picker.FileTypeChoices.Add("JPEG", new List<string>() { ".jpg" });
         picker.FileTypeChoices.Add("BMP", new List<string>() { ".bmp" });
@@ -406,8 +381,6 @@ public partial class DecodePage : Page
         {
             OpenImageButton.IsEnabled = false;
         }
-
-
     }
 
     private async void OpenImage(object sender, RoutedEventArgs e)
@@ -452,21 +425,16 @@ public partial class DecodePage : Page
             lastSavedTextLocation = path.Path;
             OpenTextButton.IsEnabled = true;
         }
-
-
-
     }
 
     private async void OpenText(object sender, RoutedEventArgs e)
     {
         if (lastSavedTextLocation != "")
         {
-
             var options = new Windows.System.LauncherOptions();
             options.DisplayApplicationPicker = true;
             await Windows.System.Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(lastSavedTextLocation), options);
         }
-
     }
 
     public async void BitmapToImageSource(System.Drawing.Bitmap bitmap)
@@ -504,9 +472,6 @@ public partial class DecodePage : Page
             DecodeFromSnippingToolButton.IsEnabled = false;
 
             await CleanupMediaCaptureAsync();
-
-
-
         }
         else if (captureManagerInitialized == true)
         {
@@ -522,8 +487,6 @@ public partial class DecodePage : Page
             DecodeFromClipboardButton.IsEnabled = true;
             DecodeFromSnippingToolButton.IsEnabled = true;
         }
-
-
     }
 
     private async void StartPreviewAsync()
@@ -532,7 +495,6 @@ public partial class DecodePage : Page
         {
             return;
         }
-
         try
         {
             captureManagerInitialized = true;
@@ -543,7 +505,6 @@ public partial class DecodePage : Page
                 TxtActivityLog.Text = "No source groups found.";
                 return;
             }
-
             //Get the first frame source group and first frame source, Or write your code to select them//
             MediaFrameSourceGroup selectedFrameSourceGroup = frameSourceGroups[0];
             MediaFrameSourceInfo frameSourceInfo = selectedFrameSourceGroup.SourceInfos[0];
@@ -572,7 +533,6 @@ public partial class DecodePage : Page
 
             captureManagerInitialized = true;
             TxtActivityLog.Text = "Webcam preview from device: " + selectedFrameSourceGroup.DisplayName;
-
         }
         catch (Exception Exc)
         {
@@ -593,7 +553,6 @@ public partial class DecodePage : Page
                 mediaFrameReader.Dispose();
             }
         }
-
         captureManagerInitialized = false;
         stateManager(false);
         TxtActivityLog.Text = "Webcam preview has canceled.";

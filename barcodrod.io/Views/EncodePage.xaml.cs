@@ -29,16 +29,11 @@ public sealed partial class EncodePage : Page
         if (ePage.ActualHeight > 150)
         {
             var size = ePage.ActualHeight - EncodeButton.ActualHeight;
-            //BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
             BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
             TxtActivityLog.MaxHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight*2);
             TxtActivityLog.MinHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight * 2);
-            
-            
             BarcodeSelector.MaxHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
             BarcodeSelector.MinHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
-            //TxtActivityLog.Height = dPage.ActualHeight - 30 - TxtCommandBar.ActualHeight;
-            //TxtActivityLog.MaxHeight = TxtStackPanel.ActualHeight - 40 - TxtCommandBar.ActualHeight;
         }
     }
 
@@ -46,8 +41,8 @@ public sealed partial class EncodePage : Page
     {
         //ViewModel = App.GetService<EncodeViewModel>();
         InitializeComponent();
-        BarcodeSelector.MinHeight = ePage.ActualHeight - EncodeButton.ActualHeight;
-        BarcodeSelector.MaxHeight = ePage.ActualHeight - EncodeButton.ActualHeight;
+        BarcodeSelector.MinHeight = ePage.ActualHeight - (EncodeButton.ActualHeight * 2.0);
+        BarcodeSelector.MaxHeight = ePage.ActualHeight - (EncodeButton.ActualHeight * 2.0);
     }
 
     //function to copy the decoded bitmap to the user's clipboard as a pastable image
@@ -62,7 +57,6 @@ public sealed partial class EncodePage : Page
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
     }
-
 
     //function to create a barcode from text
     private void CreateBarcode(object sender, RoutedEventArgs e)
@@ -226,5 +220,41 @@ public sealed partial class EncodePage : Page
 
     }
 
+    private void GenerateWiFiQRCode(object sender, RoutedEventArgs e)
+    {
+        var encryptionType = "";
+        var networkName = SSID.Text;
+        var password = Password.Text;
+        if (WifiSecurityButtonWEP.IsChecked == true)
+        {
+            encryptionType = "WEP";
+        }
+        else if (WifiSecurityButtonWPA.IsChecked == true)
+        {
+            encryptionType = "WPA";
+        }
+        TxtActivityLog.Text = $"WIFI:T:{encryptionType};S:{networkName};P:{password};;";
+    }
 
+    private void GenerateEmailQRCode(object sender, RoutedEventArgs e)
+    {
+        var email = EmailAddress.Text;
+        var subject = EmailSubject.Text;
+        var body = EmailBody.Text;
+        TxtActivityLog.Text = $"MATMSG:TO:{email};SUB:{subject};BODY:{body};;";
+    }
+
+    private void GeneratevCardQRCode(object sender, RoutedEventArgs e)
+    {
+        var firstName = vCardFirstName.Text;
+        var lastName = vCardLastName.Text;
+        var phoneNumber = vCardPhone.Text;
+        var cellNumber = vCardCell.Text;
+        var email = vCardEmail.Text;
+        var address = vCardAddress.Text;
+        var company = vCardCompany.Text;
+        var jobTitle = vCardTitle.Text;
+        var website = vCardWebsite.Text;
+        TxtActivityLog.Text = $"BEGIN:VCARD\nVERSION:3.0\nN:{lastName};{firstName};;;\nFN:{firstName} {lastName}\nTEL;TYPE=WORK,VOICE:{phoneNumber}\nTEL;TYPE=WORK,CELL:{cellNumber}\nEMAIL:{email}\nADR;TYPE=WORK,PREF:;;{address};;;\nORG:{company}\nTITLE:{jobTitle}\nURL:{website}\nEND:VCARD";
+    }
 }

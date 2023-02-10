@@ -9,7 +9,6 @@
     SizeChanged="SizeChangedEventHandler">
 
     <Grid>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
@@ -41,38 +40,129 @@
                 <x:String>MSI</x:String>
                 <x:String>PLESSEY</x:String>
             </ListBox>
-            
-
-        </StackPanel>
-
-
-        <StackPanel x:Name="TxtStackPanel" Grid.Column="1" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch"  Height="Auto" >
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,10" VerticalAlignment="Stretch">
-                <TextBlock  Text="Width:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <TextBox x:Name ="userHeight" PlaceholderText="800" HorizontalAlignment="Stretch" Margin="0,0,25,0"/>
-                <TextBlock Text="Height:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <TextBox x:Name="userWidth"  PlaceholderText="800" HorizontalAlignment="Stretch"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Wi-Fi" Margin="0,10,0,10" >
+                    <Button.Flyout>
+                        <Flyout>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0,0,10,0">
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Security Type:" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1"/>
+                                    <RadioButtons x:Name="WifiSecurityButtons" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1">
+                                        <RadioButton x:Name="WifiSecurityButtonWPA" Content="WPA2/3"/>
+                                        <RadioButton x:Name="WifiSecurityButtonWEP" Content="WEP"/>
+                                        <RadioButton x:Name="WifiSecurityButtonNone" IsChecked="True" Content="None"/>
+                                    </RadioButtons>
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="SSID:" Margin="0,0,0,0" />
+                                    <TextBox x:Name ="SSID"   Margin="0,10,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Password:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="Password"   Margin="0,10,0,0"  />
+                                </StackPanel>
+                                <Button x:Name="InsertWifi" HorizontalAlignment="Stretch"  Grid.Row="1" Grid.ColumnSpan="2" Click="GenerateWiFiQRCode"   Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal"  >
+                                        <TextBlock  Text="Insert"  Margin="0,0,10,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <Button Content="Email" Margin="5,10,0,10" >
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Email:" Margin="0,0,0,0" />
+                                <TextBox x:Name ="EmailAddress"   Margin="0,5,0,5"  />
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Subject:" Margin="0,0,0,0" />
+                                <TextBox x:Name ="EmailSubject"   Margin="0,5,0,5"  />
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Message:" Margin="0,0,0,0" />
+                                <TextBox x:Name ="EmailBody"   Margin="0,5,0,5"  />
+                                <Button x:Name="InsertEmail" HorizontalAlignment="Stretch"  Grid.Row="1" Grid.ColumnSpan="2" Click="GenerateEmailQRCode"  Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal"  >
+                                        <TextBlock  Text="Insert"  Margin="0,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <Button Content="vCard" Margin="5,10,0,10" >
+                    <Button.Flyout>
+                        <Flyout>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150" Margin="0,0,10,0">
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="First Name:" Margin="0,0,0,0" />
+                                    <TextBox x:Name ="vCardFirstName"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Last Name:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardLastName"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Email:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardEmail"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Cell:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardCell"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Phone:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardPhone"   Margin="0,5,0,0"  />
+                                </StackPanel>
+                                <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Address:" Margin="0,0,0,0" />
+                                    <TextBox x:Name ="vCardAddress"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Website:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardWebsite"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Company:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardCompany"   Margin="0,5,0,0"  />
+                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Title:" Margin="0,10,0,0" />
+                                    <TextBox x:Name ="vCardTitle"   Margin="0,5,0,0"  />
+                                </StackPanel>
+                                <Button x:Name="insertVCard" HorizontalAlignment="Stretch"  Grid.Row="1" Grid.ColumnSpan="2" Click="GeneratevCardQRCode"   Margin="0,15,0,0">
+                                    <StackPanel Orientation="Horizontal"  >
+                                        <TextBlock  Text="Insert"  Margin="0,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
-            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0" Margin="0,6,30,0" MinHeight="200" 
+        </StackPanel>
+        <StackPanel x:Name="TxtStackPanel" Grid.Column="1" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch"  Height="Auto" >
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,5" VerticalAlignment="Stretch">
+                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Width:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBox x:Name ="userWidth" PlaceholderText="800" HorizontalAlignment="Stretch" Margin="0,0,25,0"/>
+                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Height:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBox x:Name="userHeight"  PlaceholderText="800" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0" Margin="0,6,30,0" MinHeight="120" 
                  AcceptsReturn="True" TextWrapping="Wrap" 
                       IsEnabled="True" VerticalAlignment="Stretch"   ScrollViewer.VerticalScrollBarVisibility="Auto" PlaceholderText="Enter text to encode here."/>
-            
             <TextBlock x:Name="EncodeError" Margin="0,10,0,0" TextWrapping="WrapWholeWords"   HorizontalAlignment="Center" Height="auto" Width="Auto"   FontStretch="Condensed" VerticalAlignment="Bottom" />
-
         </StackPanel>
-
         <StackPanel Grid.Column="2"  Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="Auto">
             <CommandBar DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True" HorizontalAlignment="Center">
                 <CommandBar.PrimaryCommands>
-                    <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False"/>
-                    <AppBarSeparator />
                     <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage" IsEnabled="False"/>
+                    <AppBarSeparator />
+                    <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False"/>
                     <AppBarSeparator />
                     <AppBarButton x:Name="OpenImageButton" Icon="OpenLocal" Label="Open Image" Click="OpenImage" IsEnabled="False"/>
                 </CommandBar.PrimaryCommands>
             </CommandBar>
             <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="180" VerticalAlignment="Top" HorizontalAlignment="Stretch"/>
         </StackPanel>
-
     </Grid>
 </Page>
