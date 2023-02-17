@@ -32,7 +32,9 @@ Method 2: From Windows Package Manager using winget via command line
 ```
 winget install --name barcodrod.io
 ```
-Method 3: Downloading source and building on your own in Visual Studio using the provided .sln file
+Method 3: Downloading and installing the MSIX package directly from the latest GitHub release [HERE](https://github.com/MarkHopper24/barcodrod.io/releases/latest) 
+
+Method 4: Downloading source and building on your own in Visual Studio using the provided .sln file
 
 ## Usage
 Includes support for the following barcode formats:
