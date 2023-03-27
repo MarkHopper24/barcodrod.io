@@ -38,7 +38,7 @@ public sealed partial class ShellPage : Page
 
     private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        if (App.MainWindow.Height < 473 || App.MainWindow.Width < 1330) { App.MainWindow.SetWindowSize(1330, 483); }
+        //if (App.MainWindow.Height < 473 || App.MainWindow.Width < 1330) { App.MainWindow.SetWindowSize(1330, 483); }
         TitleBarHelper.UpdateTitleBar(RequestedTheme);
 
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));

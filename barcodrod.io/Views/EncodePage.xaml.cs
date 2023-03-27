@@ -26,23 +26,14 @@ public sealed partial class EncodePage : Page
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
-        if (ePage.ActualHeight > 150)
-        {
-            var size = ePage.ActualHeight - EncodeButton.ActualHeight;
-            BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
-            TxtActivityLog.MaxHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight*2);
-            TxtActivityLog.MinHeight = ePage.ActualHeight - (SaveImageButton.ActualHeight * 2);
-            BarcodeSelector.MaxHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
-            BarcodeSelector.MinHeight = ePage.ActualHeight - SaveImageButton.ActualHeight - EncodeButton.ActualHeight - 10;
-        }
+
+            BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;  
     }
+
 
     public EncodePage()
     {
-        //ViewModel = App.GetService<EncodeViewModel>();
         InitializeComponent();
-        BarcodeSelector.MinHeight = ePage.ActualHeight - (EncodeButton.ActualHeight * 2.0);
-        BarcodeSelector.MaxHeight = ePage.ActualHeight - (EncodeButton.ActualHeight * 2.0);
     }
 
     //function to copy the decoded bitmap to the user's clipboard as a pastable image
@@ -109,15 +100,20 @@ public sealed partial class EncodePage : Page
                 lastEncoded = barcode;
                 SaveImageButton.IsEnabled = true;
                 CopyImageButton.IsEnabled = true;
-                EncodeError.Text = "";
+                EncodeError.Message = "";
+                EncodeError.Title = "";
+                EncodeError.IsOpen = false;
 
             }
             catch (Exception ex)
             {
-                EncodeError.Text = ex.Message;
+                BarcodeViewer.Source = null;
+                EncodeError.Message = ex.Message;
+                EncodeError.Title = "Error";
+                EncodeError.IsOpen = true;
+                EncodeError.Severity = InfoBarSeverity.Error;
                 SaveImageButton.IsEnabled = false;
                 CopyImageButton.IsEnabled = false;
-                
 
             }
 
