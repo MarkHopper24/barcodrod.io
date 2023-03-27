@@ -1,82 +1,54 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices.WindowsRuntime;
-using barcodrod.io.ViewModels;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.UI.Xaml.Navigation;
 using Windows.ApplicationModel.DataTransfer;
-using Windows.Graphics.Imaging;
+using Windows.Foundation.Collections;
 using Windows.Media.Capture;
-using Windows.Media.Capture.Frames;
-using Windows.Media.MediaProperties;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
+using Windows.System;
+using WinRT.Interop;
 using ZXing.Windows.Compatibility;
 using Image = Microsoft.UI.Xaml.Controls.Image;
+
 
 namespace barcodrod.io.Views;
 
 
 public partial class DecodePage : Page
 {
-
-
-
     private readonly BarcodeReader reader = new BarcodeReader();
-    private MediaCapture mediaCaptureManager;
-    private MediaFrameReader mediaFrameReader;
-    private bool captureManagerInitialized = false;
+
     private string lastSavedlocation;
     private string lastSavedTextLocation;
+    private string lastSavedCSVLocation;
 
-    private Image imagePreviewElement;
-    private SoftwareBitmap backBitmapBuffer;
-    private bool taskFrameRenderRunning = false;
+
     public Bitmap lastDecoded;
     public string lastDecodedType;
-    bool screenshotSuccess;
-    public EncodeViewModel ViewModel
-    {
-        get;
-    }
+    StreamWriter sw;
+    LauncherOptions _launcherOptions;
 
 
-    private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
-    {
-        if (dPage.ActualHeight > 150)
-        {
-            var size = dPage.ActualHeight - 50 - TxtCommandBar.ActualHeight;
-            BarcodeViewer.MaxHeight = size;
-            TxtActivityLog.MaxHeight = size;
-            BarcodeViewer.MinHeight = size;
-            TxtActivityLog.MinHeight = size;
-        }
-    }
 
 
-    protected async override void OnNavigatedFrom(NavigationEventArgs e)
-    {
-        base.OnNavigatedFrom(e);
-
-        if (captureManagerInitialized != false)
-        {
-            await CleanupMediaCaptureAsync();
-        }
-    }
 
 
     public DecodePage()
     {
-
-
         //ViewModel = App.GetService<DecodeViewModel>();
         InitializeComponent();
-        //TxtActivityLog.TextAlignment = TextAlignment.Left;
+
         reader.Options.TryHarder = true;
         reader.Options.TryInverted = true;
         reader.AutoRotate = true;
+
         reader.Options.PossibleFormats = new ZXing.BarcodeFormat[]
         {
             ZXing.BarcodeFormat.QR_CODE,
@@ -99,29 +71,130 @@ public partial class DecodePage : Page
         };
     }
 
+    private bool DidDecodeSucceed(int scanResult)
+    {
+        switch (scanResult)
+        {
+            case 0:
+                ZoomToggle.IsEnabled = true;
+                ScanResult.Severity = InfoBarSeverity.Success;
+                ScanResult.Title = "Success! ";
+                ScanResult.Message = lastDecodedType + " detected.";
+                ScanResult.IsOpen = true;
+                return true;
 
+            case 1:
+                TxtActivityLog.Text = "";
+                ZoomToggle.IsEnabled = false;
+                ScanResult.Severity = InfoBarSeverity.Informational;
+                ScanResult.Title = "No barcode detected. ";
+                ScanResult.Message = "Please try again.";
+                ScanResult.IsOpen = true;
+                OpenTextWithButton.IsEnabled = false;
+                return false;
+            case 2:
+                TxtActivityLog.Text = "";
+                ZoomToggle.IsEnabled = false;
+                ScanResult.Title = "Error";
+                ScanResult.Severity = InfoBarSeverity.Error;
+                ScanResult.Message = "Snipping Tool failed to launch. Please try again.";
+                ScanResult.IsOpen = true;
+                OpenTextWithButton.IsEnabled = false;
+                return false;
+            case 3:
+                TxtActivityLog.Text = "";
+                ZoomToggle.IsEnabled = false;
+                ScanResult.Title = "No screenshot detected.";
+                ScanResult.Severity = InfoBarSeverity.Informational;
+                ScanResult.Message = "Please make sure 'Automatically save screenshots' is enabled in Snipping Tool > Settings.";
+                ScanResult.IsOpen = true;
+                OpenTextWithButton.IsEnabled = false;
+                return false;
+            case 4:
+                TxtActivityLog.Text = "";
+                ZoomToggle.IsEnabled = false;
+                ScanResult.Title = "Error";
+                ScanResult.Severity = InfoBarSeverity.Error;
+                ScanResult.Message = "No image files detected in selected folder.";
+                ImageFolderButton.IsEnabled = true;
+                ScanResult.IsOpen = true;
+                OpenTextWithButton.IsEnabled = false;
+                return false;
+            case 5:
+                TxtActivityLog.Text = "";
+                ZoomToggle.IsEnabled = false;
+                ScanResult.Title = "No result";
+                OpenTextWithButton.IsEnabled = false;
+                ScanResult.Severity = InfoBarSeverity.Informational;
+                ScanResult.Message = "Did not recieve an image from the Windows Camera app.";
+                ScanResult.IsOpen = true;
+                return false;
+            case 6:
+                ScanResult.Title = "No apps found";
+                ScanResult.Severity = InfoBarSeverity.Informational;
+                ScanResult.Message = "Please check 'Apps > Default apps' in Windows settings.";
+                ScanResult.IsOpen = true;
+
+                return true;
+            default: return false;
+
+        }
+
+
+    }
 
     public string DecodeBitmap(Bitmap bitmap)
     {
+        BarcodeViewer.Visibility = Visibility.Visible;
         OpenTextButton.IsEnabled = false;
         OpenImageButton.IsEnabled = false;
         var decoded = reader.Decode(bitmap);
         if (decoded == null)
         {
-            var result = "No barcode found. Please try again.";
+            DidDecodeSucceed(1);
+            String? result = null;
             stateManager(false);
             return result;
-
         }
         else
         {
+
             stateManager(true);
             var result = decoded.Text;
             lastDecodedType = decoded.BarcodeFormat.ToString();
             lastDecoded = bitmap;
-            BarcodeType.Message = lastDecodedType;
+
+            DidDecodeSucceed(0);
             return result;
+
         }
+    }
+
+    private async Task<bool> IsResultURI()
+    {
+        Uri uri;
+        try
+        {
+            uri = new Uri(TxtActivityLog.Text);
+            var success = await Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri);
+            //var success = await Launcher.Launch­Uri­Async(uri);
+            if (success != 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+
+        }
+        catch(Exception ex)
+        {
+            //not a registered URI
+            return false;
+        }
+
+
     }
 
 
@@ -147,37 +220,36 @@ public partial class DecodePage : Page
             TxtActivityLog.IsEnabled = true;
             SaveImageButton.IsEnabled = true;
             //OpenImageButton.IsEnabled = true;
-            //CopyImageButton.IsEnabled = true;
+            CopyImageButton.IsEnabled = true;
             SaveTextButton.IsEnabled = true;
-
             CopyTextButton.IsEnabled = true;
-            BarcodeType.IsOpen = true;
+            ZoomToggle.IsEnabled = true;
+
+
         }
         else if (state == false)
         {
+            ZoomSlider.IsEnabled = false;
+            ZoomToggle.IsEnabled = false;
             TxtActivityLog.IsEnabled = false;
             SaveImageButton.IsEnabled = false;
             OpenImageButton.IsEnabled = false;
-            //CopyImageButton.IsEnabled = false;
+            CopyImageButton.IsEnabled = false;
             SaveTextButton.IsEnabled = false;
             OpenTextButton.IsEnabled = false;
             CopyTextButton.IsEnabled = false;
-            BarcodeType.Message = "";
-            BarcodeType.IsOpen = false;
+
         }
     }
 
     private async void ClearState(object sender, RoutedEventArgs e)
     {
-
-
-        TakePhotoButton.IsEnabled = false;
-        TakePhotoBar.Visibility = Visibility.Collapsed;
-        TakePhotoButton.Visibility = Visibility.Collapsed;
-        TakePhotoBar.IsEnabled = false;
-        captureManagerInitialized = false;
+        ScanResult.IsOpen = false;
+        ZoomToggle.Icon = new FontIcon { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\xe9a6" };
+        ZoomToggle.IsEnabled = false;
+        ZoomSlider.IsEnabled = false;
         BarcodeViewer.Source = null;
-        await CleanupMediaCaptureAsync();
+        BarcodeScroller.Visibility = Visibility.Collapsed;
         WebcamButton.Text = "Webcam";
 
         if (lastDecoded != null)
@@ -188,6 +260,7 @@ public partial class DecodePage : Page
         lastSavedlocation = "";
         lastSavedTextLocation = "";
         stateManager(false);
+        OpenTextWithButton.IsEnabled = false;
         DecodeFromFileButton.IsEnabled = true;
         DecodeFromClipboardButton.IsEnabled = true;
         DecodeFromSnippingToolButton.IsEnabled = true;
@@ -199,6 +272,7 @@ public partial class DecodePage : Page
     {
         var timestamp = DateTime.Now;
         var uri = new System.Uri("ms-screenclip:");
+        App.MainWindow.Hide();
         await (Windows.System.Launcher.LaunchUriAsync(uri)).AsTask();
         var screenshotFolder =
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Screenshots\";
@@ -206,6 +280,13 @@ public partial class DecodePage : Page
         var snippingTool = Process.GetProcessesByName("ScreenClippingHost");
         //.Where(p => p.StartTime > timestamp).FirstOrDefault();
         Process ourSnippingTool = null;
+        if (snippingTool == null || snippingTool.Length == 0)
+        {
+
+            App.MainWindow.Show();
+            DidDecodeSucceed(3);
+            return;
+        }
         foreach (var item in snippingTool)
         {
             if (item.StartTime > timestamp)
@@ -215,15 +296,18 @@ public partial class DecodePage : Page
             }
             else
             {
-                TxtActivityLog.Text = "Unable to determine if Snipping Tool succesfully launched.";
+                DidDecodeSucceed(2);
+                App.MainWindow.Show();
                 return;
             }
-
         }
 
         if (ourSnippingTool != null)
         {
+            //hide the main app window so the user can't see it
+
             await ourSnippingTool.WaitForExitAsync();
+            App.MainWindow.Show();
         }
 
         DateTime lastWritten = Directory.GetLastWriteTime(screenshotFolder);
@@ -244,27 +328,50 @@ public partial class DecodePage : Page
         }
         else if (lastWritten < timestamp)
         {
-            TxtActivityLog.Text = "No Snipping Tool screenshot detected. Please make sure you have 'Automatically save screenshots' enabled in Snipping Tool > Settings.";
+            //no ss detected
+            DidDecodeSucceed(3);
+            App.MainWindow.Show();
             BarcodeViewer.Source = null;
+            return;
         }
     }
 
-    public void DecodeFromFile(string filepath)
+    public async void DecodeFromFile(string filepath)
     {
+        //StorageFile file;
+        //file = await StorageFile.GetFileFromPathAsync(filepath);
         StorageFile file = StorageFile.GetFileFromPathAsync(filepath).GetAwaiter().GetResult();
-        var bitmap = new System.Drawing.Bitmap(file.Path);
+        //check if file is 0 bytes in size
+        var fileProperties = await file.GetBasicPropertiesAsync();
+        if (fileProperties.Size == 0)
+        {
+            DidDecodeSucceed(5);
+            return;
+        }
+
+        Bitmap bitmap = new System.Drawing.Bitmap(file.Path);
         var result = DecodeBitmap(bitmap);
         if (result != null)
         {
+            DidDecodeSucceed(0);
             TxtActivityLog.Text = result;
+
             result.GetType().ToString();
             BitmapToImageSource(bitmap);
+
+            var Uri = await IsResultURI();
+            if (Uri == true)
+            {
+                OpenTextWithButton.IsEnabled = true;
+            }
+
         }
         else
         {
-            TxtActivityLog.Text = "No barcode found. Please try again.";
+            DidDecodeSucceed(1);
             BarcodeViewer.Source = null;
         }
+
     }
 
     private async void DecodeFromClipboard(object sender, RoutedEventArgs e)
@@ -276,10 +383,104 @@ public partial class DecodePage : Page
             var bit = await data.OpenReadAsync();
             System.IO.Stream stream = bit.AsStreamForRead();
             System.Drawing.Bitmap bitmap = new Bitmap(stream);
-
             var result = DecodeBitmap(bitmap);
-            TxtActivityLog.Text = result;
-            BitmapToImageSource(bitmap);
+            if (result != null)
+            {
+                TxtActivityLog.Text = result;
+                result.GetType().ToString();
+                BitmapToImageSource(bitmap);
+
+                DidDecodeSucceed(0);
+                var Uri = await IsResultURI();
+                if (Uri == true)
+                {
+                    OpenTextWithButton.IsEnabled = true;
+                }
+
+
+            }
+            else
+            {
+                DidDecodeSucceed(1);
+                BarcodeViewer.Source = null;
+            }
+        }
+    }
+
+    public async void CustomCameraCaptureUI(object sender, RoutedEventArgs e)
+    {
+        _launcherOptions = new LauncherOptions();
+        var window = new Microsoft.UI.Xaml.Window();
+
+        var hndl = WinRT.Interop.WindowNative.GetWindowHandle(window);
+
+        _launcherOptions.TreatAsUntrusted = false;
+
+        _launcherOptions.DisplayApplicationPicker = false;
+        _launcherOptions.TargetApplicationPackageFamilyName = "Microsoft.WindowsCamera_8wekyb3d8bbwe";
+
+        window.SetIsAlwaysOnTop(true);
+        //place window over the main window
+
+
+        InitializeWithWindow.Initialize(_launcherOptions, hndl);
+
+        var file = await CaptureFileAsync(CameraCaptureUIMode.Photo);
+
+        if (file == null)
+        {
+            window.Content = null;
+            window = null;
+            return;
+        }
+        else
+        {
+            DecodeFromFile(file.Path);
+            //await file.DeleteAsync();
+            window.Content = null;
+            window = null;
+
+        }
+
+
+
+    }
+
+    public async Task<StorageFile> CaptureFileAsync(CameraCaptureUIMode mode)
+    {
+        //App.MainWindow.Hide();
+
+        var tempFolder = await StorageFolder.GetFolderFromPathAsync(System.IO.Path.GetTempPath());
+        var tempFileName = $"temp.png";
+
+        var tempFile = await tempFolder.CreateFileAsync(tempFileName, CreationCollisionOption.GenerateUniqueName);
+        var token = Windows.ApplicationModel.DataTransfer.SharedStorageAccessManager.AddFile(tempFile);
+
+        var set = new ValueSet();
+
+        set.Add("MediaType", "photo");
+        set.Add("PhotoFileToken", token);
+        set.Add("MaxResolution", (int)CameraCaptureUIMaxPhotoResolution.HighestAvailable);
+        set.Add("Format", 1);
+
+
+
+
+
+        var uri = new Uri("microsoft.windows.camera.picker:" + token);
+        var result = await Windows.System.Launcher.LaunchUriForResultsAsync(uri, _launcherOptions, set);
+
+        //DecodeFromFile(tempFile.Path);
+
+        if (result.Status == LaunchUriStatus.Success && tempFile != null)
+        {
+            var file = tempFile;
+            return file;
+
+        }
+        else
+        {
+            return null;
         }
     }
 
@@ -302,7 +503,6 @@ public partial class DecodePage : Page
         picker.FileTypeFilter.Add(".exif");
         picker.FileTypeFilter.Add(".webp");
         picker.FileTypeFilter.Add(".heif");
-        picker.FileTypeFilter.Add(".heic");
         picker.FileTypeFilter.Add(".jfif");
         picker.FileTypeFilter.Add(".jpe");
         picker.FileTypeFilter.Add(".jif");
@@ -327,14 +527,29 @@ public partial class DecodePage : Page
         {
             var bitmap = new System.Drawing.Bitmap(file.Path);
             var result = DecodeBitmap(bitmap);
-            TxtActivityLog.Text = result;
-            BitmapToImageSource(bitmap);
+            if (result != null)
+            {
+                DidDecodeSucceed(0);
+                TxtActivityLog.Text = result;
+                BitmapToImageSource(bitmap);
+                if (await IsResultURI() == true)
+                {
+                    OpenTextWithButton.IsEnabled = true;
+                }
+                else
+                {
+                    OpenTextWithButton.IsEnabled = false;
+                }
+                
+            }
+            else
+            {
+                DidDecodeSucceed(1);
+                BarcodeViewer.Source = null;
+            }
+
         }
-
     }
-
-
-
 
     public async void SaveBitmapToFile(Bitmap bitmap, StorageFile file)
     {
@@ -351,22 +566,17 @@ public partial class DecodePage : Page
 
     private async void SaveImage(object sender, RoutedEventArgs e)
     {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
         var window = new Microsoft.UI.Xaml.Window();
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.SuggestedFileName = "DecodedBarcode";
-
-
+        picker.SuggestedFileName = timestamp + "." + lastDecodedType;
         picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
         picker.FileTypeChoices.Add("JPEG", new List<string>() { ".jpg" });
         picker.FileTypeChoices.Add("BMP", new List<string>() { ".bmp" });
         picker.FileTypeChoices.Add("GIF", new List<string>() { ".gif" });
         picker.FileTypeChoices.Add("TIFF", new List<string>() { ".tiff" });
         picker.FileTypeChoices.Add("ICO", new List<string>() { ".ico" });
-        picker.FileTypeChoices.Add("DIB", new List<string>() { ".dib" });
-        picker.FileTypeChoices.Add("WMF", new List<string>() { ".wmf" });
-        picker.FileTypeChoices.Add("EMF", new List<string>() { ".emf" });
-        picker.FileTypeChoices.Add("EXIF", new List<string>() { ".exif" });
         picker.FileTypeChoices.Add("WEBP", new List<string>() { ".webp" });
         picker.FileTypeChoices.Add("HEIF", new List<string>() { ".heif" });
         picker.FileTypeChoices.Add("HEIC", new List<string>() { ".heic" });
@@ -396,27 +606,38 @@ public partial class DecodePage : Page
         {
             OpenImageButton.IsEnabled = false;
         }
-
-
     }
 
     private async void OpenImage(object sender, RoutedEventArgs e)
     {
         if (lastSavedlocation != "" && lastSavedlocation != null)
         {
-
             var options = new Windows.System.LauncherOptions();
-            //options.DisplayApplicationPicker = true;
+            options.DisplayApplicationPicker = true;
             await Windows.System.Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(lastSavedlocation), options);
+        }
+    }
+
+    //function to copy the decoded bitmap to the user's clipboard as a pastable image
+    private async void CopyImage(object sender, RoutedEventArgs e)
+    {
+        if (lastDecoded != null)
+        {
+            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+            lastDecoded.Save(file.Path, ImageFormat.Png);
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetBitmap(RandomAccessStreamReference.CreateFromFile(file));
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
     }
 
     private async void SaveText(object sender, RoutedEventArgs e)
     {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
         var window = new Microsoft.UI.Xaml.Window();
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.SuggestedFileName = "DecodedBarcode";
+        picker.SuggestedFileName = timestamp;
 
         picker.FileTypeChoices.Add("Text", new List<string>() { ".txt" });
 
@@ -429,7 +650,49 @@ public partial class DecodePage : Page
             lastSavedTextLocation = path.Path;
             OpenTextButton.IsEnabled = true;
         }
+    }
 
+    private async void SaveCSV(object sender, RoutedEventArgs e)
+    {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
+        var window = new Microsoft.UI.Xaml.Window();
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var picker = new Windows.Storage.Pickers.FileSavePicker();
+        picker.SuggestedFileName = timestamp;
+
+        picker.FileTypeChoices.Add("CSV (Comma delimited)", new List<string>() { ".csv" });
+
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        var path = await picker.PickSaveFileAsync();
+        var tempCSVExists = await ApplicationData.Current.LocalFolder.TryGetItemAsync("temp.csv");
+
+        if (path != null && tempCSVExists != null)
+        {
+            {
+                var csv = await ApplicationData.Current.LocalFolder.GetFileAsync("temp.csv");
+                await csv.CopyAndReplaceAsync(path);
+                await csv.DeleteAsync();
+
+
+
+                lastSavedCSVLocation = path.Path;
+                OpenCsv.IsEnabled = true;
+
+
+
+
+            }
+        }
+
+    }
+
+    private async void OpenCSV(object sender, RoutedEventArgs e)
+    {
+
+        var options = new Windows.System.LauncherOptions();
+        options.DisplayApplicationPicker = true;
+        await Windows.System.Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(lastSavedCSVLocation), options);
+        TeachingTip.IsOpen = false;
 
 
     }
@@ -438,12 +701,10 @@ public partial class DecodePage : Page
     {
         if (lastSavedTextLocation != "")
         {
-
             var options = new Windows.System.LauncherOptions();
             options.DisplayApplicationPicker = true;
             await Windows.System.Launcher.LaunchFileAsync(await StorageFile.GetFileFromPathAsync(lastSavedTextLocation), options);
         }
-
     }
 
     public async void BitmapToImageSource(System.Drawing.Bitmap bitmap)
@@ -461,223 +722,295 @@ public partial class DecodePage : Page
         }
     }
 
-    private async void DecodeFromWebcam(object sender, RoutedEventArgs e)
-    {
-        if (captureManagerInitialized == false)
-        {
-            StartPreviewAsync();
-            WebcamButton.Text = "Stop Webcam";
-            //CopyImageButton.IsEnabled = false;
-            OpenImageButton.IsEnabled = false;
-            SaveImageButton.IsEnabled = false;
-            TakePhotoButton.IsEnabled = true;
-            TakePhotoButton.Visibility = Visibility.Visible;
-            TakePhotoBar.IsEnabled = true;
-            TakePhotoBar.Visibility = Visibility.Visible;
-            DecodeFromClipboardButton.IsEnabled = false;
-            DecodeFromFileButton.IsEnabled = false;
-            DecodeFromClipboardButton.IsEnabled = false;
-            DecodeFromSnippingToolButton.IsEnabled = false;
-
-            await CleanupMediaCaptureAsync();
-
-
-
-        }
-        else if (captureManagerInitialized == true)
-        {
-            BarcodeViewer.Source = null;
-            await CleanupMediaCaptureAsync();
-            WebcamButton.Text = "Webcam";
-            TakePhotoButton.IsEnabled = false;
-            TakePhotoButton.Visibility = Visibility.Collapsed;
-            TakePhotoBar.IsEnabled = false;
-            TakePhotoBar.Visibility = Visibility.Collapsed;
-            captureManagerInitialized = false;
-            DecodeFromFileButton.IsEnabled = true;
-            DecodeFromClipboardButton.IsEnabled = true;
-            DecodeFromSnippingToolButton.IsEnabled = true;
-        }
-
-
-    }
-
-    private async void StartPreviewAsync()
-    {
-        if (captureManagerInitialized == true)
-        {
-            return;
-        }
-
-        try
-        {
-            captureManagerInitialized = true;
-            //1. Select frame sources and frame source groups//
-            var frameSourceGroups = await MediaFrameSourceGroup.FindAllAsync();
-            if (frameSourceGroups.Count <= 0)
-            {
-                TxtActivityLog.Text = "No source groups found.";
-                return;
-            }
-
-            //Get the first frame source group and first frame source, Or write your code to select them//
-            MediaFrameSourceGroup selectedFrameSourceGroup = frameSourceGroups[0];
-            MediaFrameSourceInfo frameSourceInfo = selectedFrameSourceGroup.SourceInfos[0];
-
-            //2. Initialize the MediaCapture object to use the selected frame source group//
-            mediaCaptureManager = new MediaCapture();
-            var settings = new MediaCaptureInitializationSettings
-            {
-                SourceGroup = selectedFrameSourceGroup,
-                SharingMode = MediaCaptureSharingMode.SharedReadOnly,
-                StreamingCaptureMode = StreamingCaptureMode.Video,
-                MemoryPreference = MediaCaptureMemoryPreference.Cpu
-            };
-
-            await mediaCaptureManager.InitializeAsync(settings);
-
-            //3. Initialize Image Preview Element with xaml Image Element.//
-            imagePreviewElement = BarcodeViewer;
-            imagePreviewElement.Source = new SoftwareBitmapSource();
-
-            //4. Create a frame reader for the frame source//
-            MediaFrameSource mediaFrameSource = mediaCaptureManager.FrameSources[frameSourceInfo.Id];
-            mediaFrameReader = await mediaCaptureManager.CreateFrameReaderAsync(mediaFrameSource, MediaEncodingSubtypes.Argb32);
-            mediaFrameReader.FrameArrived += FrameReader_FrameArrived;
-            await mediaFrameReader.StartAsync();
-
-            captureManagerInitialized = true;
-            TxtActivityLog.Text = "Webcam preview from device: " + selectedFrameSourceGroup.DisplayName;
-
-        }
-        catch (Exception Exc)
-        {
-            TxtActivityLog.Text = "MediaCapture initialization failed: " + Exc.Message;
-        }
-    }
-
-    private async Task CleanupMediaCaptureAsync()
-    {
-        if (mediaCaptureManager != null)
-        {
-            using (var mediaCapture = mediaCaptureManager)
-            {
-                mediaCaptureManager = null;
-
-                mediaFrameReader.FrameArrived -= FrameReader_FrameArrived;
-                await mediaFrameReader.StopAsync();
-                mediaFrameReader.Dispose();
-            }
-        }
-
-        captureManagerInitialized = false;
-        stateManager(false);
-        TxtActivityLog.Text = "Webcam preview has canceled.";
-    }
-
-    private void FrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
-    {
-        var mediaFrameReference = sender.TryAcquireLatestFrame();
-        var videoMediaFrame = mediaFrameReference?.VideoMediaFrame;
-        var softwareBitmap = videoMediaFrame?.SoftwareBitmap;
-
-        //HERE IS WHERE WE CAN WORK WITH THE BITMAP SOURCE
-
-        if (softwareBitmap != null)
-        {
-            if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8 ||
-                softwareBitmap.BitmapAlphaMode != BitmapAlphaMode.Premultiplied)
-            {
-                softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
-            }
-
-            // Swap the processed frame to backBuffer and dispose of the unused image.
-            softwareBitmap = Interlocked.Exchange(ref backBitmapBuffer, softwareBitmap);
-            softwareBitmap?.Dispose();
-
-            // Changes to XAML ImageElement must happen on UI thread through Dispatcher
-            //var task = imagePreviewElement.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-            _ = imagePreviewElement.DispatcherQueue.TryEnqueue(async () =>
-            {
-                // Don't let two copies of this task run at the same time.
-                if (taskFrameRenderRunning)
-                {
-                    return;
-                }
-                taskFrameRenderRunning = true;
-
-                // Keep draining frames from the backbuffer until the backbuffer is empty.
-                SoftwareBitmap latestBitmap;
-
-                while (((latestBitmap = Interlocked.Exchange(ref backBitmapBuffer, null)) != null) && (screenshotSuccess == false))
-                {
-                    var imageSource = (SoftwareBitmapSource)imagePreviewElement.Source;
-                    await imageSource.SetBitmapAsync(latestBitmap);
-                    //HERE IS WHERE WE CAN WORK WITH THE BITMAP SOURCE
-
-                    latestBitmap.Dispose();
-                }
-
-                taskFrameRenderRunning = false;
-            });
-        }
-
-        if (mediaFrameReference != null)
-        {
-            mediaFrameReference.Dispose();
-        }
-    }
-
-    private async void CapturePhoto_Click(object sender, RoutedEventArgs e)
-    {
-        if (captureManagerInitialized == false)
-        {
-            return;
-        }
-
-        try
-        {
-            ImageEncodingProperties imgFormat = ImageEncodingProperties.CreateBmp();
-
-            StorageFolder picturesFolder = KnownFolders.PicturesLibrary;
-            StorageFolder barcodeFolder = await picturesFolder.CreateFolderAsync("barcodrod.io", CreationCollisionOption.OpenIfExists);
-
-            if (Directory.Exists(barcodeFolder.Path))
-            {
-
-                var file = await barcodeFolder.CreateFileAsync("webcamphoto.png", CreationCollisionOption.ReplaceExisting);
-                //get the current image in BarcodeViewer and save it to the file variable
-                await mediaCaptureManager.CapturePhotoToStorageFileAsync(imgFormat, file);
-                screenshotSuccess = true;
-                //set the image source to the file variable
-                BarcodeViewer.Source = new BitmapImage(new Uri(file.Path));
-                await CleanupMediaCaptureAsync();
-                BarcodeViewer.Source = null;
-                WebcamButton.Text = "Webcam";
-                stateManager(false);
-                DecodeFromFile(file.Path);
-
-
-                screenshotSuccess = false;
-                DecodeFromSnippingToolButton.IsEnabled = true;
-                DecodeFromFileButton.IsEnabled = true;
-                DecodeFromClipboardButton.IsEnabled = true;
-                TakePhotoButton.Visibility = Visibility.Collapsed;
-                TakePhotoBar.Visibility = Visibility.Collapsed;
-
-            }
-        }
-        catch (Exception Exc)
-        {
-            TxtActivityLog.Text = Exc.Message;
-        }
-    }
-
     private void CopyTextToClipboard(object sender, RoutedEventArgs e)
     {
         DataPackage dataPackage = new DataPackage();
         dataPackage.SetText(TxtActivityLog.Text);
         Clipboard.SetContent(dataPackage);
     }
+
+    //function to share/open decoded text content with default app
+    private async void ShareText(object sender, RoutedEventArgs e)
+    {
+        if (TxtActivityLog.Text != "" && TxtActivityLog.Text != null)
+        {
+            var options = new Windows.System.LauncherOptions();
+            options.DisplayApplicationPicker = true;
+            if (await IsResultURI() == false)
+            {
+                DidDecodeSucceed(6);
+                OpenTextWithButton.IsEnabled= false;
+                return;
+            }
+            Uri uri = new Uri(TxtActivityLog.Text);
+            
+            await Windows.System.Launcher.LaunchUriAsync(uri, options);
+        }
+        else
+        {
+            OpenTextWithButton.IsEnabled = false;
+        }
+
+    }
+
+    private async void BulkDecode(object sender, RoutedEventArgs e)
+    {
+        OpenCsv.IsEnabled = false;
+        //KillBulkDecode();
+        var decodedCount = 0;
+        var noBarCodeCount = 0;
+        var fileCount = 0;
+        FailedDecodeProgressStat.Text = "";
+        
+        ImageFolderButton.IsEnabled = false;
+        if (TeachingTip.IsOpen == true)
+        {
+            KillBulkDecode();
+            return;
+        }
+
+
+        ImageFolderButton.IsEnabled = false;
+        SaveCsv.IsEnabled = false;
+        progressRing.IsActive = false;
+        progressRing.Value = 0;
+        TeachingTip.IsOpen = false;
+
+        StorageFile file;
+
+        var folder = await BulkDecodePicker();
+        if (folder == null || folder == "NotSelected")
+        {
+            ImageFolderButton.IsEnabled = true;
+            return;
+        }
+        string[] filePaths = Directory.GetFiles(folder);
+        //remove any non image files from filePaths list
+        filePaths = filePaths.Where(s => s.EndsWith(".jpg") || s.EndsWith(".png") || s.EndsWith(".bmp") || s.EndsWith(".gif") || s.EndsWith(".heif") || s.EndsWith(".hiec") || s.EndsWith(".bmp") || s.EndsWith(".jpeg")).ToArray();
+        fileCount = filePaths.Length;
+        if (fileCount == 0)
+        {
+            DidDecodeSucceed(4);
+            return;
+        }
+
+        TeachingTip.Title = "Decoding...";
+        progressRing.Minimum = 0;
+        progressRing.Maximum = fileCount - 1;
+        TeachingTip.IsOpen = true;
+        progressRing.IsActive = true;
+        var result = string.Empty;
+        var ScanResult = string.Empty;
+
+        var csv = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.csv", CreationCollisionOption.ReplaceExisting);
+        var csvPath = csv.Path;
+
+        sw = new StreamWriter(csvPath);
+        sw.AutoFlush = true;
+        sw.WriteLine("File Name,Barcode Type,Decoded Result");
+
+        foreach (string filePath in filePaths)
+        {
+            var error = "";
+            if (TeachingTip.IsOpen == false)
+            {
+                KillBulkDecode();
+                return;
+            }
+            result = string.Empty;
+            ScanResult = string.Empty;
+            try
+            {
+                file = await StorageFile.GetFileFromPathAsync(filePath);
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+
+                continue;
+            }
+
+            if (error == "")
+            {
+                var bitmap = new System.Drawing.Bitmap(file.Path);
+                var decoded = reader.Decode(bitmap);
+                if (decoded == null)
+                {
+                    error = "BARCODE NOT FOUND";
+                    noBarCodeCount += 1;
+
+                    result = error;
+                    ScanResult = "NONE";
+                }
+                else
+                {
+
+                    result = decoded.Text;
+                    ScanResult = decoded.BarcodeFormat.ToString();
+                    decodedCount += 1;
+
+                }
+                TotalFiles.Text = decodedCount + "/" + fileCount + " images decoded 🤠";
+
+                //DecodeProgressStat.Text = decodedCount + " file(s) succesfully decoded.";
+                if (noBarCodeCount > 0)
+                {
+                    FailedDecodeProgressStat.Text = "Unable to decode " + noBarCodeCount + " image(s). These have been logged in the .CSV output.";
+                    FailedDecodeProgressStat.Visibility = Visibility.Visible;
+
+                }
+                else if(noBarCodeCount == 0)
+                {
+                    FailedDecodeProgressStat.Visibility = Visibility.Collapsed;
+                }
+                bitmap.Dispose();
+            }
+
+
+
+            progressRing.Value = decodedCount + noBarCodeCount;
+            sw.WriteLine(file.Name + "," + ScanResult + "," + result);
+        }
+        TeachingTip.Title = "Complete";
+        if(noBarCodeCount >= 1)
+        {
+
+        }
+        SaveCsv.IsEnabled = true;
+        sw.Dispose();
+        sw.Close();
+        ImageFolderButton.IsEnabled = true;
+
+
+    }
+
+    private async void KillBulkDecode()
+    {
+        FailedDecodeProgressStat.Text = "";
+        //DecodeProgressStat.Text = "";
+        sw.Close();
+        SaveCsv.IsEnabled = false;
+        progressRing.Value = 0;
+        progressRing.Minimum = 0;
+        progressRing.Maximum = 0;
+        progressRing.IsActive = false;
+        ImageFolderButton.IsEnabled = true;
+
+
+        var tempCSVExists = await ApplicationData.Current.LocalFolder.TryGetItemAsync("temp.csv");
+
+        if (tempCSVExists != null)
+        {
+            var csv = await ApplicationData.Current.LocalFolder.GetFileAsync("temp.csv");
+            await csv.DeleteAsync();
+
+        }
+    }
+
+    async Task<string> BulkDecodePicker()
+    {
+        var window = new Microsoft.UI.Xaml.Window();
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+        folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+        WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+
+        var folder = await folderPicker.PickSingleFolderAsync();
+        if (folder != null)
+        {
+            return folder.Path;
+        }
+        else
+        {
+            ImageFolderButton.IsEnabled = true;
+            string path = "NotSelected";
+            return path;
+        }
+
+    }
+    private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (BarcodeScroller != null)
+        {
+            BarcodeScroller.ChangeView(null, null, (float)e.NewValue);
+        }
+    }
+
+    private async void ToggleZoom(object sender, RoutedEventArgs e)
+    {
+        if (ZoomSlider.IsEnabled == false)
+        {
+
+            ZoomSlider.IsEnabled = true;
+            ZoomSlider.Visibility = Visibility.Visible;
+            BarcodeViewer.Visibility = Visibility.Collapsed;
+
+            BarcodeScroller.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
+
+            BarcodeScroller.HorizontalScrollMode = ScrollMode.Enabled;
+
+            BarcodeScroller.VerticalScrollMode = ScrollMode.Enabled;
+            BarcodeScroller.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+
+            BarcodeScroller.IsEnabled = true;
+            BarcodeScroller.Visibility = Visibility.Visible;
+
+            ZoomToggle.Icon = new FontIcon { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\ue71e" };
+            ZoomToggle.Label = "Zoom Mode";
+
+            using (MemoryStream memory = new MemoryStream())
+            {
+                if (lastDecoded != null)
+                {
+                    Image image = new Image();
+                    lastDecoded.Save(memory, ImageFormat.Bmp);
+                    memory.Position = 0;
+                    BitmapImage bitmapimage = new BitmapImage();
+                    await bitmapimage.SetSourceAsync(memory.AsRandomAccessStream());
+
+                    image.Source = bitmapimage;
+                    image.SetValue(Image.SourceProperty, image.Source);
+                    image.HorizontalAlignment = HorizontalAlignment.Center;
+                    image.VerticalAlignment = VerticalAlignment.Top;
+                    ZoomSlider.IsEnabled = true;
+                    BarcodeScroller.Content = image;
+                }
+
+            }
+            return;
+        }
+
+
+
+        if (ZoomSlider.IsEnabled == true)
+        {
+            if (BarcodeViewer != null)
+            {
+                ZoomSlider.Visibility = Visibility.Collapsed;
+                BarcodeViewer.Source = null;
+
+
+                BarcodeViewer.Visibility = Visibility.Visible;
+                BarcodeViewer.Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform;
+
+
+
+                BarcodeScroller.Visibility = Visibility.Collapsed;
+
+                ZoomSlider.IsEnabled = false;
+                ZoomToggle.Icon = new FontIcon { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\xe9a6" };
+                ZoomToggle.Label = "Fill Mode";
+
+                if (lastDecoded != null)
+                {
+                    BitmapToImageSource(lastDecoded);
+                }
+            }
+
+        }
+    }
+
+
 
 }

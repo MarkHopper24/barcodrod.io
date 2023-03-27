@@ -6,7 +6,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using ZXing;
+using ZXing.Common;
 using ZXing.Windows.Compatibility;
 using Image = Microsoft.UI.Xaml.Controls.Image;
 
@@ -24,31 +26,34 @@ public sealed partial class EncodePage : Page
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
-        if (ePage.ActualHeight > 150)
-        {
-            var size = ePage.ActualHeight - EncodeButton.ActualHeight - 60;
-            BarcodeViewer.MaxHeight = size;
-            BarcodeViewer.MinHeight = size;
-            TxtActivityLog.MaxHeight = size;
-            TxtActivityLog.MinHeight = size;
-            BarcodeSelector.MaxHeight = size;
-            BarcodeSelector.MinHeight = size;
-            //TxtActivityLog.Height = dPage.ActualHeight - 30 - TxtCommandBar.ActualHeight;
-            //TxtActivityLog.MaxHeight = TxtStackPanel.ActualHeight - 40 - TxtCommandBar.ActualHeight;
-        }
+
+            BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;  
     }
+
 
     public EncodePage()
     {
-        //ViewModel = App.GetService<EncodeViewModel>();
         InitializeComponent();
-        //BarcodeSelector.MinHeight = TxtActivityLog.ActualHeight - EncodeButton.ActualHeight;
     }
 
+    //function to copy the decoded bitmap to the user's clipboard as a pastable image
+    private async void CopyImage(object sender, RoutedEventArgs e)
+    {
+        if (lastEncoded != null)
+        {
+            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+            lastEncoded.Save(file.Path, ImageFormat.Png);
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetBitmap(RandomAccessStreamReference.CreateFromFile(file));
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+    }
 
     //function to create a barcode from text
     private void CreateBarcode(object sender, RoutedEventArgs e)
     {
+        if (lastEncoded != null)
+        { lastEncoded.Dispose(); }
         if (BarcodeSelector.SelectedItem == null)
         {
             return;
@@ -57,27 +62,58 @@ public sealed partial class EncodePage : Page
         //set the writer formation to the selected format
         writer.Format = (ZXing.BarcodeFormat)Enum.Parse(typeof(ZXing.BarcodeFormat), format);
 
-        writer.Options = new ZXing.Common.EncodingOptions
+        //store the text of userWidth and userHeight into two variables
+
+        int defaultHeight = 800;
+        int defaultWidth = 800;
+        int height;
+        int width;
+        //check if the user entered a value for width and height and it is a number
+        if (int.TryParse(userHeight.Text, out height) == true) 
         {
-            Height = 800,
-            Width = 800,
-            PureBarcode = true,
-            Margin = 0
-        };
+            writer.Options.Height = height;
+        }
+        else
+        {
+            writer.Options.Height = defaultHeight;
+        }
+
+        if (int.TryParse(userWidth.Text, out width) == true)
+        {
+            writer.Options.Width = width;
+        }
+        else
+        {
+            writer.Options.Width = defaultWidth;
+        }
+        writer.Options.PureBarcode = true;
+        writer.Options.Margin = 0;
+
         if (TxtActivityLog.Text != null && TxtActivityLog.Text != "")
         {
             try
             {
                 Bitmap barcode = writer.WriteAsBitmap(TxtActivityLog.Text);
                 BitmapToImageSource(barcode);
+                BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
+                BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
                 lastEncoded = barcode;
                 SaveImageButton.IsEnabled = true;
-                EncodeError.Text = "";
+                CopyImageButton.IsEnabled = true;
+                EncodeError.Message = "";
+                EncodeError.Title = "";
+                EncodeError.IsOpen = false;
+
             }
             catch (Exception ex)
             {
-                EncodeError.Text = ex.Message;
-
+                BarcodeViewer.Source = null;
+                EncodeError.Message = ex.Message;
+                EncodeError.Title = "Error";
+                EncodeError.IsOpen = true;
+                EncodeError.Severity = InfoBarSeverity.Error;
+                SaveImageButton.IsEnabled = false;
+                CopyImageButton.IsEnabled = false;
 
             }
 
@@ -96,6 +132,10 @@ public sealed partial class EncodePage : Page
             Image image = new Image();
             image.Source = bitmapimage;
             BarcodeViewer.SetValue(Image.SourceProperty, image.Source);
+            await memory.FlushAsync();
+
+            
+            
         }
     }
 
@@ -125,10 +165,12 @@ public sealed partial class EncodePage : Page
 
     private async void SaveImage(object sender, RoutedEventArgs e)
     {
+        var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
+        
         var window = new Microsoft.UI.Xaml.Window();
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
-        picker.SuggestedFileName = "Generated" + BarcodeSelector.SelectedItem;
+        picker.SuggestedFileName = timestamp + "." + BarcodeSelector.SelectedItem;
 
 
         picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
@@ -174,8 +216,41 @@ public sealed partial class EncodePage : Page
 
     }
 
-    private void ePage_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void GenerateWiFiQRCode(object sender, RoutedEventArgs e)
     {
+        var encryptionType = "";
+        var networkName = SSID.Text;
+        var password = Password.Text;
+        if (WifiSecurityButtonWEP.IsChecked == true)
+        {
+            encryptionType = "WEP";
+        }
+        else if (WifiSecurityButtonWPA.IsChecked == true)
+        {
+            encryptionType = "WPA";
+        }
+        TxtActivityLog.Text = $"WIFI:T:{encryptionType};S:{networkName};P:{password};;";
+    }
 
+    private void GenerateEmailQRCode(object sender, RoutedEventArgs e)
+    {
+        var email = EmailAddress.Text;
+        var subject = EmailSubject.Text;
+        var body = EmailBody.Text;
+        TxtActivityLog.Text = $"MATMSG:TO:{email};SUB:{subject};BODY:{body};;";
+    }
+
+    private void GeneratevCardQRCode(object sender, RoutedEventArgs e)
+    {
+        var firstName = vCardFirstName.Text;
+        var lastName = vCardLastName.Text;
+        var phoneNumber = vCardPhone.Text;
+        var cellNumber = vCardCell.Text;
+        var email = vCardEmail.Text;
+        var address = vCardAddress.Text;
+        var company = vCardCompany.Text;
+        var jobTitle = vCardTitle.Text;
+        var website = vCardWebsite.Text;
+        TxtActivityLog.Text = $"BEGIN:VCARD\nVERSION:3.0\nN:{lastName};{firstName};;;\nFN:{firstName} {lastName}\nTEL;TYPE=WORK,VOICE:{phoneNumber}\nTEL;TYPE=WORK,CELL:{cellNumber}\nEMAIL:{email}\nADR;TYPE=WORK,PREF:;;{address};;;\nORG:{company}\nTITLE:{jobTitle}\nURL:{website}\nEND:VCARD";
     }
 }

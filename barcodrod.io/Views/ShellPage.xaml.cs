@@ -1,10 +1,13 @@
 ﻿using barcodrod.io.Contracts.Services;
 using barcodrod.io.Helpers;
+using barcodrod.io.Models;
+using barcodrod.io.Services;
 using barcodrod.io.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Storage;
 using Windows.System;
 
 namespace barcodrod.io.Views;
@@ -22,14 +25,11 @@ public sealed partial class ShellPage : Page
         ViewModel = viewModel;
         InitializeComponent();
 
-
+     
 
         ViewModel.NavigationService.Frame = NavigationFrame;
         ViewModel.NavigationViewService.Initialize(NavigationViewControl);
 
-        // TODO: Set the title bar icon by updating /Assets/WindowIcon.ico.
-        // A custom title bar is required for full window theme and Mica support.
-        // https://docs.microsoft.com/windows/apps/develop/title-bar?tabs=winui3#full-customization
         App.MainWindow.ExtendsContentIntoTitleBar = true;
         App.MainWindow.SetTitleBar(AppTitleBar);
         App.MainWindow.Activated += MainWindow_Activated;
@@ -38,8 +38,7 @@ public sealed partial class ShellPage : Page
 
     private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        App.MainWindow.SetWindowSize(1335, 510);
-        //get
+        //if (App.MainWindow.Height < 473 || App.MainWindow.Width < 1330) { App.MainWindow.SetWindowSize(1330, 483); }
         TitleBarHelper.UpdateTitleBar(RequestedTheme);
 
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));
