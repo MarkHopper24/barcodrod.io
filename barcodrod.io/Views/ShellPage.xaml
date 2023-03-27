@@ -18,60 +18,43 @@
             <Image Source="/Assets/WindowIcon.ico"
                    HorizontalAlignment="Left"
                    Width="16"
-                   Height="16" />
+                   Height="16"
+                   Margin="4,0,0,0"/>
             <TextBlock x:Name="AppTitleBarText"
                        VerticalAlignment="Center"
                        TextWrapping="NoWrap"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Margin="28,0,0,0"/>
+
         </Grid>
         <NavigationView
             x:Name="NavigationViewControl"
             Canvas.ZIndex="0"
-            OpenPaneLength="150"
-            IsBackButtonVisible="Visible"
+            OpenPaneLength="125"
+            IsBackButtonVisible="Collapsed"
             IsBackEnabled="{x:Bind ViewModel.IsBackEnabled, Mode=OneWay}"
             SelectedItem="{x:Bind ViewModel.Selected, Mode=OneWay}"
             IsSettingsVisible="True"
-            ExpandedModeThresholdWidth="1280"
+            ExpandedModeThresholdWidth="200"
             DisplayModeChanged="NavigationViewControl_DisplayModeChanged"
-            Header="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}">
+>
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Uid="Shell_Decode" helpers:NavigationHelper.NavigateTo="barcodrod.io.ViewModels.DecodeViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xec5a;"/>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xed14;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem x:Uid="Shell_Encode" helpers:NavigationHelper.NavigateTo="barcodrod.io.ViewModels.EncodeViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xf714;"/>
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xed63;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
-            <NavigationView.HeaderTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <TextBlock
-                            Text="{Binding}"
-                            Style="{ThemeResource TitleTextBlockStyle}" />
-                    </Grid>
-                </DataTemplate>
-            </NavigationView.HeaderTemplate>
+
             <i:Interaction.Behaviors>
-                <behaviors:NavigationViewHeaderBehavior
-                    DefaultHeader="{x:Bind ((ContentControl)ViewModel.Selected).Content, Mode=OneWay}">
-                    <behaviors:NavigationViewHeaderBehavior.DefaultHeaderTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <TextBlock
-                                    Text="{Binding}"
-                                    Style="{ThemeResource TitleTextBlockStyle}" />
-                            </Grid>
-                        </DataTemplate>
-                    </behaviors:NavigationViewHeaderBehavior.DefaultHeaderTemplate>
-                </behaviors:NavigationViewHeaderBehavior>
+               
             </i:Interaction.Behaviors>
-            <Grid Margin="{StaticResource NavigationViewPageContentMargin}">
+            <Grid>
                 <Frame x:Name="NavigationFrame" />
             </Grid>
         </NavigationView>

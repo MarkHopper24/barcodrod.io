@@ -124,10 +124,10 @@
     <value>barcodrod.io</value>
   </data>
   <data name="Shell_Decode.Content" xml:space="preserve">
-    <value>Decode</value>
+    <value>Read</value>
   </data>
   <data name="Shell_Encode.Content" xml:space="preserve">
-    <value>Encode</value>
+    <value>Create</value>
   </data>
   <data name="Settings_Personalization.Text" xml:space="preserve">
     <value>Personalization</value>
@@ -154,6 +154,6 @@
     <value>Privacy Statement</value>
   </data>
   <data name="SettingsPage_PrivacyTermsLink.NavigateUri" xml:space="preserve">
-    <value>https://github.com/MarkHopper24/barcodrod.io/privacypolicy</value>
+    <value>https://raw.githubusercontent.com/MarkHopper24/barcodrod.io/public/PrivacyPolicy</value>
   </data>
 </root>

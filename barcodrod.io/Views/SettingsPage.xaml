@@ -14,9 +14,9 @@
         <StackPanel
             x:Name="ContentArea">
             
-            <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}" />
+            <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="10,0,0,0" />
             <StackPanel Orientation="Horizontal">
-            <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
+                <StackPanel Margin="15,10,0,20">
                 <TextBlock x:Uid="Settings_Theme" />
 
                 <StackPanel Margin="{StaticResource XSmallTopMargin}">
@@ -55,9 +55,9 @@
 
             </StackPanel>
 
-            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" />
+            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="10,0,0,0" VerticalAlignment="Bottom"  />
 
-            <StackPanel Margin="{StaticResource XSmallTopMargin}">
+            <StackPanel Margin="15,10,0,0" >
                 <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}" Style="{ThemeResource BodyTextBlockStyle}" />
 
                 <TextBlock
@@ -67,6 +67,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="50">
                     <HyperlinkButton Content="barcodrod.io" NavigateUri="https://barcodrod.io"  Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
                 <HyperlinkButton Content="GitHub" NavigateUri="https://github.com/MarkHopper24/barcodrod.io"  Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
+                    
                 <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink" Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
                 </StackPanel>
             </StackPanel>

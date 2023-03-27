@@ -5,82 +5,178 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    x:Name="dPage"
-    SizeChanged="SizeChangedEventHandler">
+    x:Name="dPage">
 
-    <Grid>
+    <Grid x:Name="PageGrid">
+        
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="170"/>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*">
-            </RowDefinition>
-        </Grid.RowDefinitions>
-        <StackPanel x:Name="ButtonStackPanel" Grid.Column="0" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" ScrollViewer.VerticalScrollBarVisibility="Auto" >
-            <Button x:Name="DecodeFromSnippingToolButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Tapped="DecodeFromSnippingTool">
-                <StackPanel Orientation="Horizontal" >
-                    <SymbolIcon  Symbol="Cut"/>
-                    <TextBlock  Text="Snipping Tool"  Margin="10"/>
+        <InfoBar   Margin="0,0,8,50" Canvas.ZIndex="1" Grid.Column="1" HorizontalAlignment="Stretch"   x:Name="ScanResult"   IsOpen="False" HorizontalContentAlignment="Stretch"  VerticalAlignment="Bottom"  ></InfoBar>
+
+        <TeachingTip x:Name="TeachingTip" Grid.Column="2" Title="Decoding..." VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
+            <TeachingTip.CloseButtonStyle>
+                <Style TargetType="Button">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="CornerRadius" Value="4"/>
+                </Style>
+            </TeachingTip.CloseButtonStyle>
+            <TeachingTip.CloseButtonContent>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" >
+                    <TextBlock Text=" Cancel"  VerticalAlignment="Stretch" />
                 </StackPanel>
-            </Button>
-            <Button x:Name="DecodeFromClipboardButton"  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Tapped="DecodeFromClipboard">
-                <StackPanel Orientation="Horizontal">
-                    <SymbolIcon  Symbol="Paste"/>
-                    <TextBlock  Text="Clipboard Image"  Margin="10"/>
+            </TeachingTip.CloseButtonContent>
+
+            <TeachingTip.Content>
+                <StackPanel>
+                    <ProgressRing x:Name="progressRing" IsActive="False" IsIndeterminate="False" Margin="0,0,0,5" Height="115" Width="115"/>
+                    <TextBlock x:Name="TotalFiles" Margin="0,0,0,5" HorizontalAlignment="Center" Style="{ThemeResource BaseTextBlockStyle}" FontSize="20" />
+                    <TextBlock x:Name="FailedDecodeProgressStat" Margin="0,0,0,20" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="WrapWholeWords" Visibility="Collapsed"/>
+                    <Button x:Name="SaveCsv" HorizontalAlignment="Stretch" Click="SaveCSV" Margin="0">
+                        <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
+                            <SymbolIcon  Symbol="SaveLocal" VerticalAlignment="Stretch"/>
+                            <TextBlock x:Name="SaveCsvTextBlock" Text="Save .CSV File"  Margin="5,0,0,0" IsColorFontEnabled="True" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="OpenCsv" HorizontalAlignment="Stretch" Click="OpenCSV"  Margin="0,10,0,0">
+                        <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
+                            <SymbolIcon  Symbol="OpenWith" VerticalAlignment="Stretch"/>
+                            <TextBlock  Text="Open .CSV File"  Margin="5,0,0,0" IsColorFontEnabled="True" />
+                        </StackPanel>
+                    </Button>
+
                 </StackPanel>
-            </Button>
-            <Button x:Name="DecodeFromFileButton"   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Tapped="DecodeFromFilePicker">
-                <StackPanel Orientation="Horizontal">
-                    <SymbolIcon  Symbol="BrowsePhotos"/>
-                    <TextBlock  Text="Image File"  Margin="10"/>
-                </StackPanel>
-            </Button>
-            <Button  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,5" Tapped="DecodeFromWebcam">
-                <StackPanel Orientation="Horizontal">
-                    <SymbolIcon  Symbol="Camera"/>
-                    <TextBlock x:Name="WebcamButton"  Text="Webcam"  Margin="10"/>
-                </StackPanel>
-            </Button>
-            <Button x:Name="ClearButton" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="0,0,0,0" Tapped="ClearState" >
-                <StackPanel Orientation="Horizontal">
-                    <SymbolIcon  Symbol="Clear"/>
-                    <TextBlock Text="Clear All"  Margin="10" IsColorFontEnabled="True"/>
-                </StackPanel>
-            </Button>
-            <InfoBar x:Name="BarcodeType" Margin="0,5,0,0"  IsOpen="False" Severity="Success" HorizontalAlignment="Center" Width="auto" Height="auto" IsClosable="False"  />
-        </StackPanel>
-        <StackPanel x:Name="TxtStackPanel" Grid.Column="1" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch"  Height="Auto" >
-            <CommandBar x:Name="TxtCommandBar" DefaultLabelPosition="Right"   IsDynamicOverflowEnabled="True"   IsOpen="False" HorizontalAlignment="Left"   VerticalAlignment="Top">
-                <CommandBar.PrimaryCommands>
-                    <AppBarButton x:Name="SaveTextButton" Icon="SaveLocal" Label="Save Text" Click="SaveText"  IsEnabled="False"/>
-                    <AppBarSeparator />
-                    <AppBarButton x:Name="CopyTextButton" Icon="Copy" Label="Copy Text"  Click="CopyTextToClipboard"  IsEnabled="False" />
-                    <AppBarSeparator />
-                    <AppBarButton x:Name="OpenTextButton" Icon="OpenWith" Label="Open Text" Click="OpenText"   IsEnabled="False"  />
-                </CommandBar.PrimaryCommands>
-            </CommandBar>
-            <TextBox x:Name="TxtActivityLog" Padding="8,0,16,0"  Margin="0,0,30,0" MinHeight="120"
+            </TeachingTip.Content>
+            
+
+
+        </TeachingTip>
+
+
+
+        <ScrollViewer Margin= "10,10,0,0" Padding="0,0,8,0" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled" >
+            <StackPanel x:Name="ButtonStackPanel" Grid.Column="0"  Grid.ColumnSpan="1"   Width="Auto" VerticalAlignment="Top" Height="Auto"  HorizontalAlignment="Stretch"    >
+                <Button x:Name="DecodeFromSnippingToolButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"  Margin="0,0,0,5"  Tapped="DecodeFromSnippingTool" Height="Auto">
+                    <StackPanel Orientation="Horizontal" >
+                        <SymbolIcon  Symbol="Cut"/>
+                        <TextBlock  Text="Snipping Tool"  Margin="5"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="DecodeFromClipboardButton" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromClipboard" Height="Auto">
+                    <StackPanel Orientation="Horizontal">
+                        <SymbolIcon  Symbol="Paste"/>
+                        <TextBlock  Text="Clipboard Image"  Margin="5"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="DecodeFromFileButton" VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromFilePicker" Height="Auto">
+                    <StackPanel Orientation="Horizontal">
+                        <SymbolIcon  Symbol="BrowsePhotos"/>
+                        <TextBlock  Text="Image File"  Margin="5"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="ImageFolderButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"  Margin="0,0,0,5"  Height="Auto" Tapped="BulkDecode">
+                    <StackPanel Orientation="Horizontal" >
+                        <SymbolIcon  Symbol="Folder"/>
+                        <TextBlock  Text="Folder"  Margin="5"/>
+                    </StackPanel>
+                </Button>
+                <Button  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center"  Margin="0,0,0,5" Tapped="CustomCameraCaptureUI" Height="Auto">
+                    <StackPanel Orientation="Horizontal">
+                        <SymbolIcon  Symbol="Camera"/>
+                        <TextBlock x:Name="WebcamButton"  Text="Webcam"  Margin="5"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="ClearButton" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"  Margin="0,0,0,5" Tapped="ClearState" Height="Auto" >
+                    <StackPanel Orientation="Horizontal">
+                        <SymbolIcon  Symbol="Delete" Foreground="Red" Opacity=".5"/>
+                        <TextBlock Text="Clear All"   Margin="5" IsColorFontEnabled="True"/>
+                    </StackPanel>
+                </Button>
+
+            </StackPanel>
+            
+        </ScrollViewer>
+
+
+
+        
+      
+
+
+
+        <CommandBar  x:Name="TxtCommandBar"  CornerRadius="4" OverflowButtonVisibility="Auto"   IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"  IsOpen="False" DefaultLabelPosition="Right"  Height="Auto"    Grid.Column="1"  Margin="0,10,0,0"  VerticalAlignment="Bottom" >
+
+
+
+            <CommandBar.Style>
+                <Style TargetType="CommandBar">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="CornerRadius" Value="4"/>
+                </Style>
+            </CommandBar.Style>
+            <AppBarButton x:Name="CopyTextButton" Icon="Copy" Label='Copy' VerticalAlignment="Stretch"  Click="CopyTextToClipboard"   IsEnabled="False" CornerRadius="4" />
+            <AppBarSeparator  />
+            <AppBarButton x:Name="SaveTextButton" Icon="SaveLocal" Label="Save Text" Click="SaveText" IsEnabled="False" CornerRadius="4"/>
+            <AppBarSeparator  />
+            <AppBarButton x:Name="OpenTextButton" Icon="OpenLocal" Label="Open Text" Click="OpenText"   IsEnabled="False"  CornerRadius="4" />
+            <AppBarSeparator  />
+            <AppBarButton x:Name="OpenTextWithButton" Icon="OpenWith" Label="Launch" Click="ShareText"   IsEnabled="False"  CornerRadius="4" />
+
+
+        </CommandBar>
+
+
+        <TextBox Grid.Column="1"    x:Name="TxtActivityLog" Padding="8,0,8,0" Canvas.ZIndex="0"  Margin="0,10,10,50" Height="Auto"
                  AcceptsReturn="True" TextWrapping="Wrap" 
-                      IsEnabled="False" VerticalAlignment="Top"    ScrollViewer.VerticalScrollBarVisibility="Auto" PlaceholderText="Pick a tool on the left to begin decoding."/>
-        </StackPanel>
-        <StackPanel Grid.Column="2" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="Auto" >
-            <CommandBar DefaultLabelPosition="Right" IsDynamicOverflowEnabled="True" HorizontalAlignment="Center">
-                <CommandBar.PrimaryCommands>
-                    <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage" IsEnabled="False"/>
-                    <AppBarSeparator />
-                    <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False"/>
-                    <AppBarSeparator />
-                    <AppBarButton x:Name="OpenImageButton" Icon="OpenLocal" Label="Open Image" Click="OpenImage" IsEnabled="False"/>
-                </CommandBar.PrimaryCommands>
-            </CommandBar>
-            <Image x:Name="BarcodeViewer"  Stretch="Uniform" CanDrag="False" MinHeight="30"  Width="Auto" Height="180" VerticalAlignment="Top"/>
-            <CommandBar x:Name ="TakePhotoBar" DefaultLabelPosition="Right" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Top" >
-                <AppBarButton x:Name="TakePhotoButton" Label="Take Photo" Icon="Camera" IsEnabled="False" Click="CapturePhoto_Click" Visibility="Collapsed" HorizontalAlignment="Center" >
-                </AppBarButton>
-            </CommandBar>
-        </StackPanel>
+                      IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"    ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled" PlaceholderText="Pick a tool on the left to begin decoding." />
+
+
+
+
+        <CommandBar   CornerRadius="4" OverflowButtonVisibility="Auto"   IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"   DefaultLabelPosition="Right"  Height="Auto"    Grid.Column="2"  Margin="0,10,0,0"  VerticalAlignment="Bottom" >
+            <CommandBar.Style>
+                <Style TargetType="CommandBar">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Style>
+            </CommandBar.Style>
+            <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy" Click="CopyImage" IsEnabled="False" CornerRadius="4"/>
+            <AppBarSeparator />
+            <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage"  IsEnabled="False" CornerRadius="4"/>
+            <AppBarSeparator />
+            <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image'  Click="OpenImage"  IsEnabled="False" CornerRadius="4">
+            </AppBarButton>
+            <AppBarSeparator />
+            <AppBarButton x:Name="ZoomToggle"  IsEnabled="False" Click="ToggleZoom"  Label="Fill Mode"  CornerRadius="4">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xe9a6;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarElementContainer VerticalAlignment="Top">
+   
+
+                    <Slider x:Name="ZoomSlider" Margin="5,10,0,0" IsEnabled="False" Visibility="Collapsed"
+                        
+                        Maximum="{x:Bind BarcodeScroller.MaxZoomFactor, Mode=OneWay}"
+                        Minimum="{x:Bind BarcodeScroller.MinZoomFactor, Mode=OneWay}"
+                        Value="2"
+                        Width="150"
+                        ValueChanged="ZoomSlider_ValueChanged" />
+
+             
+
+            </AppBarElementContainer>
+  
+
+
+
+        </CommandBar>
+        <ScrollViewer  Grid.Column = "2" x:Name="BarcodeScroller"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,10,50" IsEnabled="False" Padding="10" Visibility="Collapsed" ZoomMode="Enabled" />
+        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  />
+
+        
+        
     </Grid>
 </Page>
-    
