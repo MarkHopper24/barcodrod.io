@@ -10,6 +10,7 @@
   <a href="#overview">Overview</a> •
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
+  <a href="#support">Support</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a>
 </p>
@@ -35,7 +36,7 @@ Method 3: From Windows Package Manager using winget via command line
 winget install --name barcodrod.io
 ```
 
-Method 4: Downloading source and building on your own in Visual Studio using the provided .sln file
+Method 4: Building the solution on your own in Visual Studio using the provided source code.
 
 ## Usage
 Includes support for the following barcode formats:
@@ -61,25 +62,28 @@ Decode only:
 - RSS_EXPANDED
 - EAN_13
 
-This project is a work in progress. Any contributions, suggestions, fixes, and feature requests are welcome.
+## Support
+- This project is a work in progress. Any contributions, suggestions, fixes, bug reports, and feature requests are welcome.
+- barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you're a regular user of this app or if it's helped you in any way, I would love to hear from you at <mark.hopper24@gmail.com>.
+- Microsoft Store reviews are welcome and encouraged.
+- Sharing awareness of barcodrod.io is also appreciated.
 
-## Emailware
-
-barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you liked using this app or it has helped you in any way, I'd like you send me an email at <mark.hopper24@gmail.com> letting me know anything you'd want to share about this software. I'd really appreciate it!
+**I am not accepting any donations for barcodrod.io at this time.**
 
 ## Credits
-
-This software would not have been possible without the use of the following tools, resources, and open source packages:
-
+This software would not have been possible without the the following tools, resources, and open source packages:
 - [Michael Jahn and the rest of the contributors to the ZXing.Net .NET port of the ZXing Java library](https://github.com/micjahn/ZXing.Net)
-- [Windows Snipping Tool](https://www.microsoft.com/store/productId/9MZ95KL8MR0L)
+- [Windows Community Toolkit](https://github.com/CommunityToolkit/WindowsCommunityToolkit)
+- [.NET Community Toolkit](https://github.com/CommunityToolkit/dotnet)
 - [@amitmerchant1990](https://github.com/amitmerchant1990/electron-markdownify#readme) (readme inspiration)
+- [Template Studio for WinUI](https://marketplace.visualstudio.com/items?itemName=TemplateStudio.TemplateStudioForWinUICs)
+- [Windows Camera](https://apps.microsoft.com/store/detail/windows-camera/9WZDNCRFJBBG?) and [Snipping Tool](https://apps.microsoft.com/store/detail/snipping-tool/9MZ95KL8MR0L)
 
 ## License
-
 [Apache 2.0](https://github.com/MarkHopper24/barcodrod.io/blob/public/LICENSE.txt)
 
 ---
+[barcodrod.io website](https://barcodrod.io) &nbsp;&middot;&nbsp;
+[MarkHopper24 (GitHub)](https://github.com/MarkHopper24) &nbsp;&middot;&nbsp;
+[@Mark_Hopper24 (Twitter)](https://twitter.com/Mark_Hopper24)
 
-> GitHub [MarkHopper24](https://github.com/MarkHopper24) &nbsp;&middot;&nbsp;
-> Twitter [@Mark_Hopper24](https://twitter.com/Mark_Hopper24)
