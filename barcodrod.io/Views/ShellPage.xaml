@@ -41,12 +41,12 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Uid="Shell_Decode" helpers:NavigationHelper.NavigateTo="barcodrod.io.ViewModels.DecodeViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xed14;" />
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xED14;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem x:Uid="Shell_Encode" helpers:NavigationHelper.NavigateTo="barcodrod.io.ViewModels.EncodeViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xed63;" />
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xED63;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>

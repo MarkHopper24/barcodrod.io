@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation.Collections;
@@ -13,6 +14,7 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using Windows.System;
+using WinRT;
 using WinRT.Interop;
 using ZXing.Windows.Compatibility;
 using Image = Microsoft.UI.Xaml.Controls.Image;
@@ -371,6 +373,7 @@ public partial class DecodePage : Page
             DidDecodeSucceed(1);
             BarcodeViewer.Source = null;
         }
+        bitmap.Dispose();
 
     }
 
@@ -753,6 +756,8 @@ public partial class DecodePage : Page
 
     }
 
+
+
     private async void BulkDecode(object sender, RoutedEventArgs e)
     {
         OpenCsv.IsEnabled = false;
@@ -770,7 +775,7 @@ public partial class DecodePage : Page
         }
 
 
-        ImageFolderButton.IsEnabled = false;
+        //ImageFolderButton.IsEnabled = false;
         SaveCsv.IsEnabled = false;
         progressRing.IsActive = false;
         progressRing.Value = 0;
@@ -778,13 +783,28 @@ public partial class DecodePage : Page
 
         StorageFile file;
 
-        var folder = await BulkDecodePicker();
-        if (folder == null || folder == "NotSelected")
+        var folderPicker = new FolderPicker();
+
+        //Get the Window's HWND
+        var hwnd = App.MainWindow.As<IWindowNative>().WindowHandle;
+
+        //Make folder Picker work in Win32
+
+        var initializeWithWindow = folderPicker.As<IInitializeWithWindow>();
+        initializeWithWindow.Initialize(hwnd);
+        folderPicker.FileTypeFilter.Add("*");
+
+        var folder = await folderPicker.PickSingleFolderAsync();
+
+
+
+        if (folder == null)
         {
             ImageFolderButton.IsEnabled = true;
             return;
         }
-        string[] filePaths = Directory.GetFiles(folder);
+
+        string[] filePaths = Directory.GetFiles(folder.Path);
         //remove any non image files from filePaths list
         filePaths = filePaths.Where(s => s.EndsWith(".jpg") || s.EndsWith(".png") || s.EndsWith(".bmp") || s.EndsWith(".gif") || s.EndsWith(".heif") || s.EndsWith(".hiec") || s.EndsWith(".bmp") || s.EndsWith(".jpeg")).ToArray();
         fileCount = filePaths.Length;
@@ -883,6 +903,21 @@ public partial class DecodePage : Page
 
 
     }
+    [ComImport]
+    [Guid("3E68D4BD-7135-4D10-8018-9FB6D9F33FA1")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IInitializeWithWindow
+    {
+        void Initialize(IntPtr hwnd);
+    }
+    [ComImport]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    [Guid("EECDBF0E-BAE9-4CB6-A68E-9598E1CB57BB")]
+    internal interface IWindowNative
+    {
+        IntPtr WindowHandle { get; }
+    }
+
 
     private async void KillBulkDecode()
     {
