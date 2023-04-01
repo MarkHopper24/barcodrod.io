@@ -65,7 +65,7 @@ Decode only:
 ## Support
 - This project is a work in progress. Any contributions, suggestions, fixes, bug reports, and feature requests are welcome.
 - barcodrod.io is an [emailware](https://en.wiktionary.org/wiki/emailware). If you're a regular user of this app or if it's helped you in any way, I would love to hear from you at <mark.hopper24@gmail.com>.
-- Microsoft Store reviews are welcome and encouraged.
+- Microsoft Store reviews are welcome.
 - Sharing awareness of barcodrod.io is also appreciated.
 
 **I am not accepting any donations for barcodrod.io at this time.**
