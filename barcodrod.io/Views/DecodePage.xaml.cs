@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -804,9 +804,10 @@ public partial class DecodePage : Page
             return;
         }
 
-        string[] filePaths = Directory.GetFiles(folder.Path);
-        //remove any non image files from filePaths list
-        filePaths = filePaths.Where(s => s.EndsWith(".jpg") || s.EndsWith(".png") || s.EndsWith(".bmp") || s.EndsWith(".gif") || s.EndsWith(".heif") || s.EndsWith(".hiec") || s.EndsWith(".bmp") || s.EndsWith(".jpeg")).ToArray();
+        string[] extensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".gif", ".heif", ".hiec"  }; 
+        var filePaths = Directory.GetFiles(folder.Path)
+                     .Where(file => extensions.Contains(Path.GetExtension(file).ToLower())).ToArray();
+
         fileCount = filePaths.Length;
         if (fileCount == 0)
         {
