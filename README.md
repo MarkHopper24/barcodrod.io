@@ -74,6 +74,7 @@ This software would not have been possible without the the following tools, reso
 - [@amitmerchant1990](https://github.com/amitmerchant1990/electron-markdownify#readme) (readme inspiration)
 - [Template Studio for WinUI](https://marketplace.visualstudio.com/items?itemName=TemplateStudio.TemplateStudioForWinUICs)
 - [Windows Camera](https://apps.microsoft.com/store/detail/windows-camera/9WZDNCRFJBBG?) and [Snipping Tool](https://apps.microsoft.com/store/detail/snipping-tool/9MZ95KL8MR0L)
+- AForge.NET (DirectShow Library)
 
 ## License
 [Apache 2.0](https://github.com/MarkHopper24/barcodrod.io/blob/public/LICENSE.txt)
