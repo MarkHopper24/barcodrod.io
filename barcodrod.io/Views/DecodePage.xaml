@@ -7,7 +7,8 @@
     mc:Ignorable="d"
     Unloaded="ClearState"
     x:Name="dPage">
-    
+
+
     <Grid x:Name="PageGrid">
         
         <Grid.ColumnDefinitions>
@@ -135,6 +136,7 @@
             <AppBarButton x:Name="CopyTextButton" Icon="Copy" Label='Copy Text' VerticalAlignment="Stretch"  Click="CopyTextToClipboard"   IsEnabled="False" CornerRadius="4" />
             <AppBarButton x:Name="SaveTextButton" Icon="SaveLocal" Label="Save Text" Click="SaveText" IsEnabled="False" CornerRadius="4"/>
             <AppBarButton x:Name="OpenTextButton" Icon="OpenLocal" Label="Open Text" Click="OpenText"   IsEnabled="False"  CornerRadius="4" />
+            <AppBarButton  x:Name="ClearTagsButton" Click="ClearWifiTags" Icon="Remove" Label="Wi-Fi Tags"  CornerRadius="4" Visibility="Collapsed" />
             <AppBarSeparator  />
             <AppBarButton x:Name="OpenTextWithButton" Icon="OpenWith" Label="Launch" Click="ShareText"   IsEnabled="False"  CornerRadius="4" />
 
@@ -182,12 +184,20 @@
   
 
 
-
         </CommandBar>
         <ScrollViewer  Grid.Column = "2" x:Name="BarcodeScroller"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,10,50" IsEnabled="False" Padding="10" Visibility="Collapsed" ZoomMode="Enabled" />
-        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  />
+        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  >
 
-        
-        
+            <Image.ContextFlyout>
+                <CommandBarFlyout Placement="Bottom" x:Name="ImageRightClickCommandBar">
+                    <AppBarButton Label="Copy" Icon="Copy" ToolTipService.ToolTip="Copy" Click="CopyImage" />
+                    <AppBarButton Label="Save" Icon="Save" ToolTipService.ToolTip="Save" Click="SaveImage" />
+                    <AppBarButton x:Name="ShareCommandBarButton" Label="Share" Icon="Share" ToolTipService.ToolTip="Share" Click="OpenImage" Visibility="Collapsed" />
+                </CommandBarFlyout>
+
+            </Image.ContextFlyout>
+            
+        </Image>
+
     </Grid>
 </Page>

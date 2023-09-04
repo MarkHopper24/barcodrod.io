@@ -111,9 +111,9 @@
                                 <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0,0,10,0">
                                     <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Security Type:" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1"/>
                                     <RadioButtons x:Name="WifiSecurityButtons" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1">
-                                        <RadioButton x:Name="WifiSecurityButtonWPA" Content="WPA2/3"/>
+                                        <RadioButton x:Name="WifiSecurityButtonWPA" IsChecked="True" Content="WPA2/3"/>
                                         <RadioButton x:Name="WifiSecurityButtonWEP" Content="WEP"/>
-                                        <RadioButton x:Name="WifiSecurityButtonNone" IsChecked="True" Content="None"/>
+                                        <RadioButton x:Name="WifiSecurityButtonNone"  Content="None"/>
                                     </RadioButtons>
                                 </StackPanel>
                                 <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
@@ -223,7 +223,13 @@
                 </StackPanel>
 
             </AppBarElementContainer>
+            <AppBarElementContainer HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Margin="0,5,10,0">
+                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" FontSize="12" Text="Margin:" Margin="0,7,5,0" />
+                    <TextBox x:Name="userMargin"  PlaceholderText="0" HorizontalAlignment="Stretch"/>
+                </StackPanel>
 
+            </AppBarElementContainer>
 
             <CommandBar.Style>
                 <Style TargetType="CommandBar">
@@ -253,7 +259,17 @@
             
 
         </CommandBar>
-        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  />
+        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  >
+
+            <Image.ContextFlyout>
+                <CommandBarFlyout Placement="Right" x:Name="ImageRightClickCommandBar">
+                    <AppBarButton Label="Copy" Icon="Copy" ToolTipService.ToolTip="Copy" Click="CopyImage" />
+                    <AppBarButton Label="Save" Icon="Save" ToolTipService.ToolTip="Save" Click="SaveImage" />
+                    <AppBarButton x:Name="ShareCommandBarButton" Label="Share" Icon="Share" ToolTipService.ToolTip="Share" Click="OpenImage" Visibility="Collapsed" />
+                </CommandBarFlyout>
+
+            </Image.ContextFlyout>
+        </Image>
     </Grid>
 </Page>
 

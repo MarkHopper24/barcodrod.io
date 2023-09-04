@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text.RegularExpressions;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation.Collections;
 using Windows.Media.Capture;
@@ -35,6 +36,7 @@ public partial class DecodePage : Page
     string? lastSavedlocation;
     string? lastSavedTextLocation;
     string? lastSavedCSVLocation;
+    string? WifiWithTags;
     double? frameCount;
 
 
@@ -107,7 +109,7 @@ public partial class DecodePage : Page
         reader.Options.TryHarder = true;
         reader.Options.TryInverted = true;
         reader.AutoRotate = true;
-
+        reader.Options.PureBarcode = false;
 
         reader.Options.PossibleFormats = new ZXing.BarcodeFormat[]
         {
@@ -142,6 +144,7 @@ public partial class DecodePage : Page
                 ScanResult.Title = "Success! ";
                 ScanResult.Message = lastDecodedType + " detected.";
                 ScanResult.IsOpen = true;
+
                 return true;
 
             case 1:
@@ -204,11 +207,19 @@ public partial class DecodePage : Page
 
     }
 
+    private void ShowMenu(bool isTransient)
+    {
+        FlyoutShowOptions myOption = new FlyoutShowOptions();
+        myOption.ShowMode = FlyoutShowMode.Transient;
+        ImageRightClickCommandBar.ShowAt(BarcodeViewer, myOption);
+    }
+
     public string DecodeBitmap(Bitmap bitmap)
     {
         BarcodeViewer.Visibility = Visibility.Visible;
         OpenTextButton.IsEnabled = false;
         OpenImageButton.IsEnabled = false;
+        ShareCommandBarButton.Visibility = Visibility.Collapsed;
         var decoded = reader.Decode(bitmap);
         if (decoded == null)
         {
@@ -219,19 +230,62 @@ public partial class DecodePage : Page
         }
         else
         {
-
             stateManager(true);
             var result = decoded.Text;
             lastDecodedType = decoded.BarcodeFormat.ToString();
             lastDecoded = bitmap;
 
             DidDecodeSucceed(0);
+            if (IsWifiCode(result))
+            {
+                ClearTagsButton.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ClearTagsButton.Visibility = Visibility.Collapsed;
+            }
             return result;
 
         }
     }
 
+    public bool IsWifiCode(string result)
+    {
+        string pattern = @"WIFI:T:(?<sec>[^;]+);S:(?<ssid>[^;]+);P:(?<password>[^;]+);";
+        Match match = Regex.Match(result, pattern);
 
+        if (match.Success)
+        {
+            WifiWithTags = result;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+    }
+
+    public void ClearWifiTags(object sender, RoutedEventArgs e)
+    {
+        string pattern = @"WIFI:T:(?<sec>[^;]+);S:(?<ssid>[^;]+);P:(?<password>[^;]+);";
+        Match match = Regex.Match(TxtActivityLog.Text, pattern);
+        if (match.Success)
+        {
+            string ssid = match.Groups["ssid"].Value;
+            string password = match.Groups["password"].Value;
+            //string sec = match.Groups["sec"].Value;
+            string result = $"{ssid}\n{password}";
+            TxtActivityLog.Text = result;
+            ClearTagsButton.Icon = new SymbolIcon(Symbol.Add);
+        }
+        else
+        {
+            TxtActivityLog.Text = WifiWithTags;
+            ClearTagsButton.Icon = new SymbolIcon(Symbol.Remove);
+        }
+
+    }
 
     private void DirectShowSourceChanged(object sender, RoutedEventArgs e)
     {
@@ -346,6 +400,7 @@ public partial class DecodePage : Page
         {
             DidDecodeSucceed(0);
             TxtActivityLog.Text = result;
+            BitmapToImageSource(detectedCode);
             DirectShowButtonTextBlock.Text = "Webcam";
 
         }
@@ -368,7 +423,10 @@ public partial class DecodePage : Page
                 if (SilentDecodeBitmap(video) == true)
                 {
                     detectedCode = (Bitmap)video.Clone();
-                    killVideoFeed();
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        killVideoFeed();
+                    });
                     return;
                 }
             }
@@ -489,6 +547,8 @@ public partial class DecodePage : Page
         TxtActivityLog.Text = "";
         BarcodeViewer.Source = null;
         BarcodeViewer.ClearValue(Image.SourceProperty);
+        WifiWithTags = null;
+        ClearTagsButton.Visibility = Visibility.Collapsed;
 
 
 
@@ -826,12 +886,13 @@ public partial class DecodePage : Page
         if (path != null)
         {
             OpenImageButton.IsEnabled = true;
+            ShareCommandBarButton.Visibility = Visibility.Visible;
             lastSavedlocation = path.Path;
         }
 
         else if (path == null)
         {
-            OpenImageButton.IsEnabled = false;
+            ShareCommandBarButton.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -855,6 +916,11 @@ public partial class DecodePage : Page
             var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
             dataPackage.SetBitmap(RandomAccessStreamReference.CreateFromFile(file));
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+
+        if (ImageRightClickCommandBar.IsOpen == true)
+        {
+            ImageRightClickCommandBar.Hide();
         }
     }
 
@@ -1268,6 +1334,8 @@ public partial class DecodePage : Page
         }
     }
 
+    private void ClearTagsButton_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+    {
 
-
+    }
 }

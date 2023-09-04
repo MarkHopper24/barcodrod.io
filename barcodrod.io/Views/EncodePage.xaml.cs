@@ -1,6 +1,7 @@
 ﻿using barcodrod.io.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -82,6 +83,12 @@ public sealed partial class EncodePage : Page
 
     }
 
+    private void SetMargin(object sender, RoutedEventArgs e)
+    {
+        //get the value of the user's margin
+
+    }
+
 
     //function to create a barcode from text
     private void CreateBarcode(object sender, RoutedEventArgs e)
@@ -95,6 +102,11 @@ public sealed partial class EncodePage : Page
         var format = BarcodeSelector.SelectedItem.ToString();
         //set the writer formation to the selected format
         writer.Format = (ZXing.BarcodeFormat)Enum.Parse(typeof(ZXing.BarcodeFormat), format);
+        if (writer.Format != BarcodeFormat.QR_CODE)
+        {
+            writer.Options.Hints.Remove(EncodeHintType.ERROR_CORRECTION);
+        }
+
 
         //store the text of userWidth and userHeight into two variables
 
@@ -121,8 +133,15 @@ public sealed partial class EncodePage : Page
             writer.Options.Width = defaultWidth;
         }
         writer.Options.PureBarcode = true;
-        writer.Options.Margin = 0;
-
+        int margin;
+        if (int.TryParse(userMargin.Text, out margin) == true)
+        {
+            writer.Options.Margin = margin;
+        }
+        else
+        {
+            writer.Options.Margin = 0;
+        }
         if (TxtActivityLog.Text != null && TxtActivityLog.Text != "")
         {
             try
@@ -369,11 +388,13 @@ public sealed partial class EncodePage : Page
         if (path != null)
         {
             OpenImageButton.IsEnabled = true;
+            ShareCommandBarButton.Visibility = Visibility.Visible;
             lastSavedlocation = path.Path;
         }
 
         else if (path == null)
         {
+            ShareCommandBarButton.Visibility = Visibility.Collapsed;
             OpenImageButton.IsEnabled = false;
         }
 
@@ -416,5 +437,12 @@ public sealed partial class EncodePage : Page
         var jobTitle = vCardTitle.Text;
         var website = vCardWebsite.Text;
         TxtActivityLog.Text = $"BEGIN:VCARD\nVERSION:3.0\nN:{lastName};{firstName};;;\nFN:{firstName} {lastName}\nTEL;TYPE=WORK,VOICE:{phoneNumber}\nTEL;TYPE=WORK,CELL:{cellNumber}\nEMAIL:{email}\nADR;TYPE=WORK,PREF:;;{address};;;\nORG:{company}\nTITLE:{jobTitle}\nURL:{website}\nEND:VCARD";
+    }
+
+    private void ShowMenu(bool isTransient)
+    {
+        FlyoutShowOptions myOption = new FlyoutShowOptions();
+        myOption.ShowMode = FlyoutShowMode.Transient;
+        ImageRightClickCommandBar.ShowAt(BarcodeViewer, myOption);
     }
 }
