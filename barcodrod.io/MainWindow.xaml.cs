@@ -1,6 +1,5 @@
 ﻿using barcodrod.io.Helpers;
 
-
 namespace barcodrod.io;
 
 public sealed partial class MainWindow : WindowEx

@@ -16,62 +16,14 @@
         </Grid.ColumnDefinitions>
         <InfoBar   Margin="0,0,9,50" Canvas.ZIndex="1" Grid.Column="1" HorizontalAlignment="Stretch"   x:Name="EncodeError"   IsOpen="False" HorizontalContentAlignment="Stretch"  VerticalAlignment="Bottom"  ></InfoBar>
 
-        <TeachingTip x:Name="TeachingTip" IsOpen="False" PreferredPlacement="Center">
-            <TeachingTip.CloseButtonStyle>
-                <Style TargetType="Button">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="CornerRadius" Value="4"/>
-                </Style>
-            </TeachingTip.CloseButtonStyle>
-            <TeachingTip.CloseButtonContent>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" >
-                    <TextBlock Text=" Cancel"  VerticalAlignment="Stretch" />
-                </StackPanel>
-            </TeachingTip.CloseButtonContent>
-
-            <TeachingTip.Content>
-                <StackPanel HorizontalAlignment="Stretch" Width="Auto">
-                    <ColorPicker x:Name="ColorPicker" 
-                                 IsColorPreviewVisible="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-      ColorSpectrumShape="Box"
-      IsMoreButtonVisible="True"
-      IsColorSliderVisible="True"
-      IsColorChannelTextInputVisible="True"
-                                 
-                                 
-                                 
-      IsHexInputVisible="True"
-      IsAlphaEnabled="False"
-                                 
-
-                                 />
-
-
-                    <Button x:Name="ApplyColorButton" HorizontalAlignment="Stretch" Margin="0,5,0,0" Click="ChangeColor">
-                        <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
-                            <TextBlock Text="Apply to Barcode"  Margin="5,0,0,0" IsColorFontEnabled="True" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="ApplyBackgroundButton" HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="ChangeBackground">
-                        <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
-                            <TextBlock Text="Apply to Background"  Margin="5,0,0,0" IsColorFontEnabled="True" />
-                        </StackPanel>
-                    </Button>
-                    <TextBlock x:Name="SameColorWarning" Text="⚠️ Barcode and background colors must be different."  Margin="0,5,0,0" Visibility="Collapsed"  TextWrapping="WrapWholeWords" TextAlignment="Center"/>
-
-                </StackPanel>
-                
-            </TeachingTip.Content>
-        </TeachingTip>
         <Button x:Name="EncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Grid.Column="0" VerticalAlignment="Top"  Tapped="CreateBarcode" Margin="10">
-                <StackPanel Orientation="Horizontal"  >
-                    <SymbolIcon  Symbol="Accept"/>
-                    <TextBlock  Text="Create Barcode"  Margin="5"/>
-                </StackPanel>
-            </Button>
+            <StackPanel Orientation="Horizontal"  >
+                <SymbolIcon  Symbol="Accept"/>
+                <TextBlock  Text="Create Barcode"  Margin="5"/>
+            </StackPanel>
+        </Button>
 
-
-        <ListView x:Name="BarcodeSelector" Margin="6,60,0,10" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Padding="0,0,8,0"  SelectedValue="QR_CODE"  Background="Transparent">
+        <ListView x:Name="BarcodeSelector" Margin="6,60,0,0" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Padding="0,0,8,0"  SelectedValue="QR_CODE"  Background="Transparent">
             <x:String>QR_CODE</x:String>
             <x:String>CODE_128</x:String>
             <x:String>CODE_39</x:String>
@@ -87,75 +39,79 @@
             <x:String>PLESSEY</x:String>
         </ListView>
 
-
-
         <TextBox Grid.Column="1"    x:Name="TxtActivityLog" Padding="8,5,8,0" Canvas.ZIndex="0"  Margin="0,10,10,50" Height="Auto"
                  AcceptsReturn="True" TextWrapping="Wrap" 
                       IsEnabled="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"    ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled" PlaceholderText="Enter text to encode here."/>
 
-        <CommandBar  x:Name="TxtCommandBar"  CornerRadius="4"    IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"    Grid.Column="1" Width="Auto"  Margin="0,0,0,0"  VerticalAlignment="Bottom" >
-            
-            <AppBarElementContainer Margin="0,5,5,0"  HorizontalAlignment="Stretch">
-                <Button Content="Wi-Fi" >
-                    <Button.Flyout>
-                        <Flyout>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0,0,10,0">
-                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Security Type:" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1"/>
-                                    <RadioButtons x:Name="WifiSecurityButtons" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1">
-                                        <RadioButton x:Name="WifiSecurityButtonWPA" IsChecked="True" Content="WPA2/3"/>
-                                        <RadioButton x:Name="WifiSecurityButtonWEP" Content="WEP"/>
-                                        <RadioButton x:Name="WifiSecurityButtonNone"  Content="None"/>
-                                    </RadioButtons>
-                                </StackPanel>
-                                <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
-                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="SSID:" Margin="0,0,0,0" />
-                                    <TextBox x:Name ="SSID"   Margin="0,10,0,0"  />
-                                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Password:" Margin="0,10,0,0" />
-                                    <TextBox x:Name ="Password"   Margin="0,10,0,0"  />
-                                </StackPanel>
-                                <Button x:Name="InsertWifi" HorizontalAlignment="Stretch"  Grid.Row="1" Grid.ColumnSpan="2" Click="GenerateWiFiQRCode"   Margin="0,10,0,0">
-                                    <StackPanel Orientation="Horizontal"  >
-                                        <TextBlock  Text="Insert"  Margin="0,0,10,0"/>
-                                    </StackPanel>
-                                </Button>
-                            </Grid>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </AppBarElementContainer>
-            <AppBarElementContainer Margin="0,5,5,0" HorizontalAlignment="Stretch">
-                <Button Content="Email" >
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
-                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Email:" Margin="0,0,0,0" />
-                                <TextBox x:Name ="EmailAddress"   Margin="0,5,0,5"  />
-                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Subject:" Margin="0,0,0,0" />
-                                <TextBox x:Name ="EmailSubject"   Margin="0,5,0,5"  />
-                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Message:" Margin="0,0,0,0" />
-                                <TextBox x:Name ="EmailBody"   Margin="0,5,0,5"  />
-                                <Button x:Name="InsertEmail" HorizontalAlignment="Stretch"  Grid.Row="1" Grid.ColumnSpan="2" Click="GenerateEmailQRCode"  Margin="0,10,0,0">
-                                    <StackPanel Orientation="Horizontal"  >
-                                        <TextBlock  Text="Insert"  Margin="0,0,0,0"/>
-                                    </StackPanel>
-                                </Button>
+        <CommandBar OverflowButtonVisibility="Auto"  x:Name="TxtCommandBar"  CornerRadius="4"  AllowFocusOnInteraction="True"  IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"    Grid.Column="1"  Margin="0,0,0,0"  VerticalAlignment="Bottom" >
+
+            <AppBarButton  ToolTipService.ToolTip="Wi-Fi Generator" LabelPosition="Collapsed" Label="Wi-Fi Generator"  CornerRadius="4"  AllowFocusOnInteraction="True" >
+                <AppBarButton.Content>
+                    <FontIcon Glyph="&#xE701;" />
+                </AppBarButton.Content>
+                <AppBarButton.Flyout>
+                    <Flyout>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0,0,10,0">
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Security Type:" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1"/>
+                                <RadioButtons x:Name="WifiSecurityButtons" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1">
+                                    <RadioButton x:Name="WifiSecurityButtonWPA" IsChecked="True" Content="WPA2/3"/>
+                                    <RadioButton x:Name="WifiSecurityButtonWEP" Content="WEP"/>
+                                    <RadioButton x:Name="WifiSecurityButtonNone"  Content="None"/>
+                                </RadioButtons>
                             </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </AppBarElementContainer>
-            <AppBarElementContainer  Margin="0,5,0,0" HorizontalAlignment="Stretch">
-                <Button Content="vCard" Margin="0,0,10,0">
-                <Button.Flyout>
+                            <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="SSID:" Margin="0,0,0,0" />
+                                <TextBox x:Name ="SSID"   Margin="0,10,0,0"  />
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Password:" Margin="0,10,0,0" />
+                                <TextBox x:Name ="Password"   Margin="0,10,0,0"  />
+                            </StackPanel>
+                            <Button x:Name="InsertWifi" HorizontalAlignment="Stretch"  Grid.Row="1" Grid.ColumnSpan="2" Click="GenerateWiFiQRCode"   Margin="0,10,0,0">
+                                <StackPanel Orientation="Horizontal"  >
+                                    <TextBlock  Text="Insert"  Margin="0,0,10,0"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Flyout>
+                </AppBarButton.Flyout>
+            </AppBarButton>
+
+            <AppBarButton   Margin="0,0,0,0" ToolTipService.ToolTip="Email Generator" Label="Email Generator" CornerRadius="4" LabelPosition="Collapsed"  AllowFocusOnInteraction="True"   >
+                <AppBarButton.Icon>
+                    <FontIcon  Glyph="&#xE715;" />
+                </AppBarButton.Icon>
+                <AppBarButton.Flyout>
+                    <Flyout >
+                        <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="250" >
+                            <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="To:" Margin="0,0,0,0" />
+                            <TextBox x:Name ="EmailAddress"   Margin="0,5,0,5"  />
+                            <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Subject:" Margin="0,5,0,0" />
+                            <TextBox x:Name ="EmailSubject"   Margin="0,5,0,5"  />
+                            <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Message:" Margin="0,5,0,0" />
+                            <RichEditBox x:Name ="EmailBody"   Margin="0,5,0,5" VerticalContentAlignment="Stretch" VerticalAlignment="Stretch" TextWrapping="WrapWholeWords" HorizontalTextAlignment="DetectFromContent"/>
+                            <Button x:Name="InsertEmail" HorizontalAlignment="Stretch" MaxWidth="250"  Grid.Row="1" Grid.ColumnSpan="2" Click="GenerateEmailQRCode"  Margin="0,10,0,0">
+                                <StackPanel Orientation="Horizontal"  >
+                                    <TextBlock  Text="Insert"  Margin="0,0,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Flyout>
+                </AppBarButton.Flyout>
+            </AppBarButton>
+
+            <AppBarButton Margin="0,0,0,0" ToolTipService.ToolTip="vCard (Contact Card) Generator" LabelPosition="Collapsed" Label="vCard (Contact Card) Generator"  CornerRadius="4"  AllowFocusOnInteraction="True"  >
+                <AppBarButton.Icon>
+                    <FontIcon  Glyph="&#xE77B;" />
+                </AppBarButton.Icon>
+                <AppBarButton.Flyout>
                     <Flyout>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -195,42 +151,35 @@
                             </Button>
                         </Grid>
                     </Flyout>
-                </Button.Flyout>
-                </Button>
-            </AppBarElementContainer>
-            <AppBarElementContainer HorizontalAlignment="Center">
-                <StackPanel Orientation="Horizontal" Margin="0,5,10,0" >
-                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" FontSize="12" Text="Error Correction:" Margin="0,7,5,0" />
-                    <ComboBox x:Name="CorrectionLevel" SelectedValue="L (~7%)"  Background="Transparent" SelectionChanged="SetErrorCorrectionLevel">
-                        <x:String>L (~7%)</x:String>
-                        <x:String>M (~15%)</x:String>
-                        <x:String>Q (~25%)</x:String>
-                        <x:String>H (~30%)</x:String>
-                    </ComboBox>
-                </StackPanel>
-            </AppBarElementContainer>
-            <AppBarElementContainer HorizontalAlignment="Center">
+                </AppBarButton.Flyout>
+            </AppBarButton>
+            <AppBarButton ToolTipService.ToolTip="Barcode Settings (Dimensions, Margin, Error Correction)" CornerRadius="4" Label="Barcode Settings" LabelPosition="Collapsed"  AllowFocusOnInteraction="True"  >
+                <AppBarButton.Icon>
+                    <FontIcon  Glyph="&#xE713;"/>
+                </AppBarButton.Icon>
+                <AppBarButton.Flyout>
+                    <Flyout>
+                        <StackPanel Orientation="Vertical"  Margin="0,0,0,5">
+                            <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" MinWidth="150">
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Width:" Margin="0,0,0,0" ToolTipService.ToolTip="(In pixels)"/>
+                                <TextBox x:Name ="userWidth" PlaceholderText="800"   Margin="0,5,0,5" />
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Height:" Margin="0,0,0,0" ToolTipService.ToolTip="(In pixels)" />
+                                <TextBox x:Name="userHeight"  PlaceholderText="800"   Margin="0,5,0,5"  />
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}"  Text="Margin:" Margin="0,0,0,0" ToolTipService.ToolTip="(In pixels)"/>
+                                <TextBox  x:Name="userMargin"  PlaceholderText="0" Margin="0,5,0,5" />
+                                <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Correction:" Margin="0,5,0,5"  ToolTipService.ToolTip="Error correction allows QR codes to remain scannable even when they are damaged or partially covered. It works by adding extra data to the QR code that can help recover the original information if some parts are missing or corrupted. There are four levels of error correction, ranging from 7% to 30% of the QR code’s data. The higher the level, the more resilient the QR code is, but also the more dense and complex it becomes."/>
+                                <ComboBox x:Name="CorrectionLevel" SelectedValue="L (~7%)"  SelectionChanged="SetErrorCorrectionLevel" ToolTipService.ToolTip="Error correction allows QR codes to remain scannable even when they are damaged or partially covered. It works by adding extra data to the QR code that can help recover the original information if some parts are missing or corrupted. There are four levels of error correction, ranging from 7% to 30% of the QR code’s data. The higher the level, the more resilient the QR code is, but also the more dense and complex it becomes.">
+                                    <x:String>L (~7%)</x:String>
+                                    <x:String>M (~15%)</x:String>
+                                    <x:String>Q (~25%)</x:String>
+                                    <x:String>H (~30%)</x:String>
+                                </ComboBox>
+                            </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Margin="0,5,10,0" >
-                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" FontSize="12" Text="Width:" Margin="0,7,5,0" />
-                    <TextBox x:Name ="userWidth" PlaceholderText="800"  />
-                </StackPanel>
-            </AppBarElementContainer>
-            <AppBarElementContainer HorizontalAlignment="Center">
-                <StackPanel Orientation="Horizontal" Margin="0,5,10,0">
-                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" FontSize="12" Text="Height:" Margin="0,7,5,0" />
-                    <TextBox x:Name="userHeight"  PlaceholderText="800" HorizontalAlignment="Stretch"/>
-                </StackPanel>
-
-            </AppBarElementContainer>
-            <AppBarElementContainer HorizontalAlignment="Center">
-                <StackPanel Orientation="Horizontal" Margin="0,5,10,0">
-                    <TextBlock Style="{ThemeResource BaseTextBlockStyle}" FontSize="12" Text="Margin:" Margin="0,7,5,0" />
-                    <TextBox x:Name="userMargin"  PlaceholderText="0" HorizontalAlignment="Stretch"/>
-                </StackPanel>
-
-            </AppBarElementContainer>
-
+                        </StackPanel>
+                    </Flyout>
+                </AppBarButton.Flyout>
+            </AppBarButton>
             <CommandBar.Style>
                 <Style TargetType="CommandBar">
                     <Setter Property="Background" Value="Transparent"/>
@@ -238,34 +187,55 @@
                 </Style>
             </CommandBar.Style>
         </CommandBar>
-        <CommandBar   CornerRadius="4" OverflowButtonVisibility="Auto"   IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"   DefaultLabelPosition="Right"  Height="Auto"    Grid.Column="2"  Margin="0,10,0,0"  VerticalAlignment="Bottom" >
+        <CommandBar   CornerRadius="4" OverflowButtonVisibility="Auto" AllowFocusOnInteraction="True"  IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"   DefaultLabelPosition="Collapsed"  Height="Auto"    Grid.Column="2"  Margin="0,10,0,0"  VerticalAlignment="Bottom" >
             <CommandBar.Style>
                 <Style TargetType="CommandBar">
                     <Setter Property="Background" Value="Transparent"/>
                 </Style>
             </CommandBar.Style>
-            <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False" CornerRadius="4"/>
-           
-            <AppBarButton x:Name="SaveImageButton" Icon="SaveLocal" Label="Save Image" Click="SaveImage"  IsEnabled="False" CornerRadius="4"/>
-            
-            <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image'  Click="OpenImage"  IsEnabled="False" CornerRadius="4">
+            <AppBarButton x:Name="CopyImageButton" Icon="Copy" Label="Copy Image" Click="CopyImage"  ToolTipService.ToolTip="Copy Image" IsEnabled="False" CornerRadius="4"/>
+
+            <AppBarButton x:Name="SaveImageButton" Icon="Save" Label="Save Image"  ToolTipService.ToolTip="Save Image" Click="SaveImage"  IsEnabled="False" CornerRadius="4"/>
+
+            <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image'  ToolTipService.ToolTip="Open Image"  Click="OpenImage"  IsEnabled="False" CornerRadius="4">
             </AppBarButton>
-            <AppBarSeparator />
-            <AppBarButton x:Name="ChangeBarcodeColorButton" Label="Colors"  Click="OpenColorPicker"  IsEnabled="False" CornerRadius="4">
+            <AppBarButton x:Name="ChangeBarcodeColorButton" Label="Modify Colors" ToolTipService.ToolTip="Modify Colors"  IsEnabled="False" CornerRadius="4">
                 <AppBarButton.Icon>
-                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xe790;" />
+                    <FontIcon  Glyph="&#xe790;" />
                 </AppBarButton.Icon>
+                <AppBarButton.Flyout>
+                    <Flyout>
+                        <StackPanel HorizontalAlignment="Stretch" Height="Auto" Width="Auto" AllowFocusOnInteraction="True" >
+                            <ColorPicker x:Name="ColorPicker" 
+                           IsColorPreviewVisible="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ColorSpectrumShape="Box" Height="auto" IsMoreButtonVisible="True" IsColorSliderVisible="True" IsColorChannelTextInputVisible="True"
+                           IsHexInputVisible="True" IsAlphaEnabled="False"
+                           />
+                            <Button x:Name="ApplyColorButton" HorizontalAlignment="Stretch" Margin="0,5,0,0" Click="ChangeColor">
+                                <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
+                                    <TextBlock Text="Apply to Barcode"  Margin="5,0,0,0" IsColorFontEnabled="True" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ApplyBackgroundButton" HorizontalAlignment="Stretch" Margin="0,10,0,0" Click="ChangeBackground">
+                                <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
+                                    <TextBlock Text="Apply to Background"  Margin="5,0,0,0" IsColorFontEnabled="True" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock x:Name="SameColorWarning" Text="⚠️ Barcode and background colors must be different."  Margin="0,5,0,0" Visibility="Collapsed"  TextWrapping="WrapWholeWords" TextAlignment="Center"/>
+
+                        </StackPanel>
+
+                    </Flyout>
+                </AppBarButton.Flyout>
             </AppBarButton>
-            
 
         </CommandBar>
-        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  >
+        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"   >
 
             <Image.ContextFlyout>
-                <CommandBarFlyout Placement="Right" x:Name="ImageRightClickCommandBar">
-                    <AppBarButton Label="Copy" Icon="Copy" ToolTipService.ToolTip="Copy" Click="CopyImage" />
-                    <AppBarButton Label="Save" Icon="Save" ToolTipService.ToolTip="Save" Click="SaveImage" />
-                    <AppBarButton x:Name="ShareCommandBarButton" Label="Share" Icon="Share" ToolTipService.ToolTip="Share" Click="OpenImage" Visibility="Collapsed" />
+                <CommandBarFlyout AlwaysExpanded="False" Placement="RightEdgeAlignedTop" x:Name="ImageRightClickCommandBar">
+                    <AppBarButton Label="Copy" Icon="Copy" ToolTipService.ToolTip="Copy" Click="CopyImage" LabelPosition="Default"  />
+                    <AppBarButton Label="Save" Icon="Save" ToolTipService.ToolTip="Save" Click="SaveImage"  LabelPosition="Default" />
+                    <AppBarButton x:Name="ShareCommandBarButton" Label="Open With" Icon="OpenWith" ToolTipService.ToolTip="Open With" Click="OpenImage" Visibility="Collapsed" />
                 </CommandBarFlyout>
 
             </Image.ContextFlyout>
@@ -274,4 +244,3 @@
 </Page>
 
     
-

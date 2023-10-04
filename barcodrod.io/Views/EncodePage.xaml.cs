@@ -54,6 +54,8 @@ public sealed partial class EncodePage : Page
             dataPackage.SetBitmap(RandomAccessStreamReference.CreateFromFile(file));
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
+
+        ImageRightClickCommandBar.Hide();
     }
 
     private void SetErrorCorrectionLevel(object sender, RoutedEventArgs e)
@@ -316,12 +318,6 @@ public sealed partial class EncodePage : Page
 
     }
 
-    private async void OpenColorPicker(object sender, RoutedEventArgs e)
-    {
-        TeachingTip.IsOpen = true;
-    }
-
-
     private async void OpenImage(object sender, RoutedEventArgs e)
     {
         if (lastSavedlocation != "" && lastSavedlocation != null)
@@ -421,7 +417,8 @@ public sealed partial class EncodePage : Page
     {
         var email = EmailAddress.Text;
         var subject = EmailSubject.Text;
-        var body = EmailBody.Text;
+        var body = "";
+        EmailBody.TextDocument.GetText(Microsoft.UI.Text.TextGetOptions.None, out body);
         TxtActivityLog.Text = $"MATMSG:TO:{email};SUB:{subject};BODY:{body};;";
     }
 
