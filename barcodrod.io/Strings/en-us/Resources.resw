@@ -156,4 +156,7 @@
   <data name="SettingsPage_PrivacyTermsLink.NavigateUri" xml:space="preserve">
     <value>https://raw.githubusercontent.com/MarkHopper24/barcodrod.io/public/PrivacyPolicy</value>
   </data>
+  <data name="Shell_History.Content" xml:space="preserve">
+    <value>History</value>
+  </data>
 </root>

@@ -4,7 +4,6 @@
     <TargetFramework>net6.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>barcodrod.io</RootNamespace>
-    <ApplicationIcon>Assets/WindowIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;arm64</Platforms>
     <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
@@ -23,9 +22,114 @@
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <UserSecretsId>b509cab9-7bac-4a2a-b212-4c9b770155a3</UserSecretsId>
     <AppxPackageDir>C:\Users\Markh\OneDrive\Desktop\Release\</AppxPackageDir>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <ApplicationIcon>WindowIcon.ico</ApplicationIcon>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="Assets\BadgeLogo.scale-100.png" />
+    <Content Remove="Assets\BadgeLogo.scale-125.png" />
+    <Content Remove="Assets\BadgeLogo.scale-150.png" />
+    <Content Remove="Assets\BadgeLogo.scale-200.png" />
+    <Content Remove="Assets\BadgeLogo.scale-400.png" />
+    <Content Remove="Assets\LargeTile.png" />
+    <Content Remove="Assets\LargeTile.scale-125.png" />
+    <Content Remove="Assets\LargeTile.scale-150.png" />
+    <Content Remove="Assets\LargeTile.scale-400.png" />
     <Content Remove="Assets\Segoe Fluent Icons.ttf" />
+    <Content Remove="Assets\SmallTile.scale-100.png" />
+    <Content Remove="Assets\SmallTile.scale-125.png" />
+    <Content Remove="Assets\SmallTile.scale-150.png" />
+    <Content Remove="Assets\SmallTile.scale-200.png" />
+    <Content Remove="Assets\SmallTile.scale-400.png" />
+    <Content Remove="Assets\SplashScreen.png" />
+    <Content Remove="Assets\SplashScreen.scale-125.png" />
+    <Content Remove="Assets\SplashScreen.scale-150.png" />
+    <Content Remove="Assets\SplashScreen.scale-200.png" />
+    <Content Remove="Assets\SplashScreen.scale-400.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-100.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-125.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-150.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-200.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-400.png" />
+    <Content Remove="Assets\Square310x310Logo.scale-125.png" />
+    <Content Remove="Assets\Square310x310Logo.scale-150.png" />
+    <Content Remove="Assets\Square310x310Logo.scale-200.png" />
+    <Content Remove="Assets\Square310x310Logo.scale-400.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-16.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-24.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-256.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-32.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-48.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-16.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-24.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-256.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-32.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-48.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-125.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-200.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-400.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-16.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-24.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-256.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-32.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-48.png" />
+    <Content Remove="Assets\Square71x71Logo.scale-100.png" />
+    <Content Remove="Assets\Square71x71Logo.scale-125.png" />
+    <Content Remove="Assets\Square71x71Logo.scale-150.png" />
+    <Content Remove="Assets\Square71x71Logo.scale-200.png" />
+    <Content Remove="Assets\Square71x71Logo.scale-400.png" />
+    <Content Remove="Assets\StoreLogo.png" />
+    <Content Remove="Assets\StoreLogo.scale-100.scale-100.png" />
+    <Content Remove="Assets\StoreLogo.scale-100.scale-125.png" />
+    <Content Remove="Assets\StoreLogo.scale-100.scale-150.png" />
+    <Content Remove="Assets\StoreLogo.scale-100.scale-200.png" />
+    <Content Remove="Assets\StoreLogo.scale-100.scale-400.png" />
+    <Content Remove="Assets\StoreLogo.scale-125.png" />
+    <Content Remove="Assets\StoreLogo.scale-150.png" />
+    <Content Remove="Assets\StoreLogo.scale-200.png" />
+    <Content Remove="Assets\StoreLogo.scale-400.png" />
+    <Content Remove="Assets\Wide310x150Logo.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-100.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-125.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-150.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-400.png" />
+    <Content Remove="Assets\WideTile.scale-125.png" />
+    <Content Remove="Assets\WideTile.scale-150.png" />
+    <Content Remove="Assets\WindowIcon.png" />
+    <Content Remove="Assets\WindowIcon.scale-100.png" />
+    <Content Remove="Assets\WindowIcon.scale-125.png" />
+    <Content Remove="Assets\WindowIcon.scale-150.png" />
+    <Content Remove="Assets\WindowIcon.scale-200.png" />
+    <Content Remove="Assets\WindowIcon.scale-400.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets\LargeTile.scale-100.png" />
+    <None Remove="Assets\LargeTile.scale-200.png" />
+    <None Remove="Assets\Square310x310Logo.scale-100.png" />
+    <None Remove="Assets\Square44x44Logo.scale-100.png" />
+    <None Remove="Assets\Square44x44Logo.scale-150.png" />
+    <None Remove="Assets\WideTile.scale-100.png" />
+    <None Remove="Assets\WideTile.scale-200.png" />
+    <None Remove="Assets\WideTile.scale-400.png" />
+    <None Remove="Square400x400Logo.scale-100.png" />
+    <None Remove="Square400x400Logo.scale-200.png" />
+    <None Remove="Square400x400Logo.scale-400.png" />
+    <None Remove="Square44x44Logo.scale-100.png" />
+    <None Remove="Square44x44Logo.scale-150.png" />
+    <None Remove="Square44x44Logo.scale-200.png" />
+    <None Remove="Square44x44Logo.scale-400.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Square400x400Logo.scale-100.png" />
+    <Content Include="Square400x400Logo.scale-200.png" />
+    <Content Include="Square400x400Logo.scale-400.png" />
+    <Content Include="Square44x44Logo.scale-100.png" />
+    <Content Include="Square44x44Logo.scale-150.png" />
+    <Content Include="Square44x44Logo.scale-200.png" />
+    <Content Include="Square44x44Logo.scale-400.png" />
+    <Content Include="WindowIcon.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,11 +138,11 @@
 
   <ItemGroup>
     <PackageReference Include="AForge.Video.DirectShow" Version="2.2.5" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.4.230913002" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.4.231115000" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="2.0.9" />
-    <PackageReference Include="WinUIEx" Version="2.3.1" />
+    <PackageReference Include="WinUIEx" Version="2.3.3" />
     <PackageReference Include="ZXing.Net" Version="0.16.9" />
     <PackageReference Include="ZXing.Net.Bindings.Windows.Compatibility" Version="0.16.12" />
   </ItemGroup>

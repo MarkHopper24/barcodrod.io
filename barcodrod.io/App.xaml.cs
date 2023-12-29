@@ -66,6 +66,8 @@ public partial class App : Application
             services.AddSingleton<IFileService, FileService>();
 
             // Views and ViewModels
+            services.AddTransient<HistoryViewModel>();
+            services.AddTransient<HistoryPage>();
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<SettingsPage>();
             services.AddTransient<EncodeViewModel>();
@@ -87,6 +89,8 @@ public partial class App : Application
     {
         // TODO: Log and handle exceptions as appropriate.
         // https://docs.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.application.unhandledexception.
+        // call e.Handled = true to prevent the app from closing when this method returns.
+        //e.Handled = true;
     }
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)

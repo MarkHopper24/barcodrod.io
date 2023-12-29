@@ -12,12 +12,12 @@
   <Identity
     Name="53383MarkHopper.570136E6C1E54"
     Publisher="CN=ADA72B16-B88A-4477-94E0-44F1442A4EAE"
-    Version="1.7.0.0" />
+    Version="1.8.0.0" />
 
   <Properties>
     <DisplayName>barcodrod.io</DisplayName>
     <PublisherDisplayName>Mark Hopper</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
+    <Logo>Assets\Square150x150Logo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -34,13 +34,15 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="ms-resource:AppDisplayName"
-        Description="ms-resource:AppDescription"
-        BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+              DisplayName="ms-resource:AppDisplayName"
+              Description="ms-resource:AppDescription"
+              BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png"  Square44x44Logo="Assets\Square400x400Logo.png">
+        <uap:DefaultTile ShortName="barcodrod.io"  Square71x71Logo="Assets\Square71x71Logo.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile >
+        <uap:SplashScreen Image="Assets\SplashScreen.png"/>
       </uap:VisualElements>
       <Extensions>
           <desktop:Extension Category="windows.toastNotificationActivation">
@@ -61,6 +63,7 @@
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
     <DeviceCapability Name="webcam"/>
+  
   </Capabilities>
 
   <genTemplate:Metadata>
