@@ -229,7 +229,7 @@
             </AppBarButton>
 
         </CommandBar>
-        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"   >
+        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,10,50"   >
 
             <Image.ContextFlyout>
                 <CommandBarFlyout AlwaysExpanded="False" Placement="RightEdgeAlignedTop" x:Name="ImageRightClickCommandBar">

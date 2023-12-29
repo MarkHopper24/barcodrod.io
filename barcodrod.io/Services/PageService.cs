@@ -17,6 +17,7 @@ public class PageService : IPageService
         Configure<DecodeViewModel, DecodePage>();
         Configure<EncodeViewModel, EncodePage>();
         Configure<SettingsViewModel, SettingsPage>();
+        Configure<HistoryViewModel, HistoryPage>();
     }
 
     public Type GetPageType(string key)

@@ -47,12 +47,7 @@ public sealed partial class ShellPage : Page
 
     private void OnClosed(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        //Kill all barcodrod.io processes
-        var processes = Process.GetProcessesByName("barcodrod.io");
-        foreach (var process in processes)
-        {
-            process.Kill();
-        }
+        Process.GetCurrentProcess().Kill();
 
     }
 

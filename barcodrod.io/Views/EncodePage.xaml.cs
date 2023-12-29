@@ -3,10 +3,10 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Newtonsoft.Json.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using ZXing;
@@ -23,6 +23,7 @@ public sealed partial class EncodePage : Page
     private Color lastColor;
     private Color lastBgColor;
     private string lastSavedlocation;
+    private string lastEncodedType;
     public EncodeViewModel ViewModel
     {
         get;
@@ -33,8 +34,6 @@ public sealed partial class EncodePage : Page
 
         BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
     }
-
-
 
     public EncodePage()
     {
@@ -84,13 +83,6 @@ public sealed partial class EncodePage : Page
         }
 
     }
-
-    private void SetMargin(object sender, RoutedEventArgs e)
-    {
-        //get the value of the user's margin
-
-    }
-
 
     //function to create a barcode from text
     private void CreateBarcode(object sender, RoutedEventArgs e)
@@ -159,6 +151,8 @@ public sealed partial class EncodePage : Page
                 EncodeError.Message = "";
                 EncodeError.Title = "";
                 EncodeError.IsOpen = false;
+                lastEncodedType = format;
+                addToHistory(TxtActivityLog.Text, barcode);
 
             }
             catch (Exception ex)
@@ -329,15 +323,45 @@ public sealed partial class EncodePage : Page
         }
     }
 
-    public async void SaveBitmapToFile(Bitmap bitmap, StorageFile file)
+    public async void SaveBitmapToFile(StorageFile file)
     {
-        bitmap = lastEncoded;
+
         if (file != null)
         {
-            using (var stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+            Bitmap bitmap = lastEncoded;
+            //Convert BarcodeViewer.Source to bitmap
+
+            //Bitmap bitmap = writer.WriteAsBitmap(TxtActivityLog.Text);
+
+            bitmap.Save(file.Path, ImageFormat.Png);
+            //resize the bitmap to the currently selected user width and height withouth changing the aspect ratio
+
+            //get the ratio of the user's selected width and height
+            double ratio = (double)writer.Options.Width / (double)writer.Options.Height;
+            //get the ratio of the bitmap's width and height
+            double bitmapRatio = (double)bitmap.Width / (double)bitmap.Height;
+            //if the bitmap's ratio is greater than the user's ratio, then the bitmap's width is greater than the user's width
+            //so we need to resize the bitmap's width to the user's width and then resize the height to maintain the aspect ratio
+            if (bitmapRatio > ratio)
             {
-                bitmap.Save(stream.AsStream(), ImageFormat.Bmp);
+                //resize the bitmap's width to the user's width
+                Bitmap resizedBitmap = new Bitmap(bitmap, new System.Drawing.Size(writer.Options.Width, (int)(writer.Options.Width / bitmapRatio)));
+                resizedBitmap.Save(file.Path, ImageFormat.Png);
+                return;
             }
+            //if the bitmap's ratio is less than the user's ratio, then the bitmap's height is greater than the user's height
+            //so we need to resize the bitmap's height to the user's height and then resize the width to maintain the aspect ratio
+            else if (bitmapRatio < ratio)
+            {
+                //resize the bitmap's height to the user's height
+                Bitmap resizedBitmap = new Bitmap(bitmap, new System.Drawing.Size((int)(writer.Options.Height * bitmapRatio), writer.Options.Height));
+                resizedBitmap.Save(file.Path, ImageFormat.Png);
+                return;
+            }
+
+            //Bitmap resizedBitmap = new Bitmap(bitmap, new System.Drawing.Size(writer.Options.Width, writer.Options.Height));
+            //resizedBitmap.Save(file.Path, ImageFormat.Png);
+
         }
 
     }
@@ -379,7 +403,7 @@ public sealed partial class EncodePage : Page
         WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
         var path = await picker.PickSaveFileAsync();
 
-        SaveBitmapToFile(lastEncoded, path);
+        SaveBitmapToFile(path);
 
         if (path != null)
         {
@@ -441,5 +465,64 @@ public sealed partial class EncodePage : Page
         FlyoutShowOptions myOption = new FlyoutShowOptions();
         myOption.ShowMode = FlyoutShowMode.Transient;
         ImageRightClickCommandBar.ShowAt(BarcodeViewer, myOption);
+    }
+
+    private async Task<bool> IsHistoryEnabled()
+    {
+        var localFolder = ApplicationData.Current.LocalFolder;
+        String settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        //get the history folder
+        var historyFolder = await localFolder.CreateFolderAsync("history", Windows.Storage.CreationCollisionOption.OpenIfExists);
+
+        //read HistoryEnabled from settings.json
+        string jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        JObject settings = JObject.Parse(jsonSettings);
+        var currentHistorySetting = settings["HistoryEnabled"];
+        if (currentHistorySetting != null)
+        {
+
+            return currentHistorySetting.Value<bool>();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    //create 2 new files in the app's local folder. One for text and one for images
+    private async Task addToHistory(string text, Bitmap bitmap)
+    {
+        var historyEnabled = await IsHistoryEnabled();
+        if (historyEnabled == false)
+        {
+            return;
+        }
+        else
+        {
+            //create folder called history if it doesn't exist
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var historyFolder = await localFolder.CreateFolderAsync("History", CreationCollisionOption.OpenIfExists);
+
+            var files = await historyFolder.GetFilesAsync();
+            string textFile;
+            string imageFile;
+            string textPath;
+            string imagePath;
+            var timestamp = DateTime.Now.ToString("MMddyy.HHmmssfff");
+
+            string imageFileName = lastEncodedType + "." + timestamp + ".png";
+            string textFileName = lastEncodedType + "." + timestamp + ".txt";
+
+            textPath = Path.Combine(historyFolder.Path, textFileName);
+            imagePath = Path.Combine(historyFolder.Path, imageFileName);
+            File.WriteAllText(textPath, text);
+            bitmap.Save(imagePath, ImageFormat.Png);
+
+            return;
+        }
+
+
+
     }
 }

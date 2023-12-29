@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -38,12 +39,16 @@ public partial class DecodePage : Page
     string? lastSavedCSVLocation;
     string? WifiWithTags;
     double? frameCount;
-
-
+    string? screenshotFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Screenshots\";
+    Process? Proc = new Process();
     Bitmap? lastDecoded;
     string? lastDecodedType;
+    bool? isWindows10;
     StreamWriter? sw;
     LauncherOptions? _launcherOptions;
+    FileSystemWatcher watcher = new FileSystemWatcher();
+
+
 
     public DecodeViewModel ViewModel
     {
@@ -54,13 +59,17 @@ public partial class DecodePage : Page
     {
         ViewModel = App.GetService<DecodeViewModel>();
         InitializeComponent();
-
-        //check for snipping tool
-        var uri = new Uri("ms-screenclip:");
-        var canLaunch = Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.ScreenSketch_8wekyb3d8bbwe").AsTask().Result;
-        if (canLaunch == LaunchQuerySupportStatus.Available)
+        string? Build = Environment.OSVersion.Version.Build.ToString();
+        watcher.Path = screenshotFolder;
+        watcher.Filter = "*.png";
+        watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime;
+        if (Build.StartsWith("1") == true)
         {
-            DecodeFromSnippingToolButton.IsEnabled = true;
+            isWindows10 = true;
+        }
+        if (Build.StartsWith("2") == true)
+        {
+            isWindows10 = false;
         }
 
         VideoCaptureDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
@@ -88,8 +97,8 @@ public partial class DecodePage : Page
             comboBox2.SelectedIndex = 0;
 
             //check if windows camera app is installed through uri scheme
-            uri = new Uri("microsoft.windows.camera:");
-            canLaunch = Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe").AsTask().Result;
+            var uri = new Uri("microsoft.windows.camera:");
+            var canLaunch = Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe").AsTask().Result;
             if (canLaunch == LaunchQuerySupportStatus.Available)
             {
                 comboBox1.Items.Add("Windows Camera app");
@@ -556,71 +565,175 @@ public partial class DecodePage : Page
 
     private async void DecodeFromSnippingTool(object sender, RoutedEventArgs e)
     {
-        var timestamp = DateTime.Now;
-        var uri = new System.Uri("ms-screenclip:");
-        App.MainWindow.Hide();
-        await (Windows.System.Launcher.LaunchUriAsync(uri)).AsTask();
-        var screenshotFolder =
-            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Screenshots\";
-        //Process.Start("ScreenClippingHost");
-        var snippingTool = Process.GetProcessesByName("ScreenClippingHost");
-        //.Where(p => p.StartTime > timestamp).FirstOrDefault();
-        Process ourSnippingTool = null;
-        if (snippingTool == null || snippingTool.Length == 0)
+        try
         {
-
-            App.MainWindow.Show();
-            DidDecodeSucceed(3);
-            return;
-        }
-        foreach (var item in snippingTool)
-        {
-            if (item.StartTime > timestamp)
+            if (Proc != null)
             {
-                ourSnippingTool = item;
-                break;
-            }
-            else
-            {
-                DidDecodeSucceed(2);
-                App.MainWindow.Show();
-                return;
+                Proc.Kill();
+                Proc.Dispose();
+                Proc = null;
             }
         }
-
-        if (ourSnippingTool != null)
+        catch
         {
-            //hide the main app window so the user can't see it
-
-            await ourSnippingTool.WaitForExitAsync();
-            App.MainWindow.Show();
+            Process? Proc = new Process();
         }
 
-        DateTime lastWritten = Directory.GetLastWriteTime(screenshotFolder);
+        ProcessStartInfo startInfo = new ProcessStartInfo();
+        startInfo.UseShellExecute = true;
+        startInfo.FileName = "ms-screenclip:";
 
-        if (lastWritten > timestamp)
+        switch (isWindows10)
         {
-            var files = Directory.GetFiles(screenshotFolder);
-            //get the most recent created file in files
-            foreach (var file in files)
-            {
-                var fileTime = System.IO.File.GetCreationTime(file);
-                if (fileTime > timestamp)
+            case true:
+                var timestamp = DateTime.Now;
+                Process[] startingProcesses = Process.GetProcessesByName("ScreenClippingHost");
+                App.MainWindow.WindowState = WindowState.Minimized;
+                Process.Start(startInfo);
+                Process[] postLaunchProcesses = Process.GetProcessesByName("ScreenClippingHost");
+                var difference = postLaunchProcesses.Except(startingProcesses);
+                Proc = difference.FirstOrDefault();
+                await Proc.WaitForExitAsync();
+                App.MainWindow.WindowState = WindowState.Normal;
+                // Check if the clipboard contains a bitmap
+                DataPackageView clipboardContent = Clipboard.GetContent();
+                if (clipboardContent.Contains(StandardDataFormats.Bitmap))
                 {
-                    //get file path of current object
-                    DecodeFromFile(file);
+                    var data = await clipboardContent.GetBitmapAsync();
+                    var bit = await data.OpenReadAsync();
+                    System.IO.Stream stream = bit.AsStreamForRead();
+                    System.Drawing.Bitmap bitmap = new Bitmap(stream);
+                    var result = DecodeBitmap(bitmap);
+                    if (result != null)
+                    {
+                        TxtActivityLog.Text = result;
+                        result.GetType().ToString();
+                        BitmapToImageSource(bitmap);
+
+                        DidDecodeSucceed(0);
+                        var Uri = await IsResultURI();
+                        if (Uri == true)
+                        {
+                            OpenTextWithButton.IsEnabled = true;
+                        }
+
+
+                    }
+                    else
+                    {
+                        DidDecodeSucceed(1);
+                        BarcodeViewer.Source = null;
+                    }
                 }
-            }
+                break;
+            case false:
+                var snippingTool = await Launcher.FindUriSchemeHandlersAsync("ms-screenclip");
+                //check if Snipping Tool is installed by package family name
+                if (snippingTool.Count == 0)
+                {
+                    DidDecodeSucceed(6);
+                    return;
+                }
+
+                if (snippingTool.Count > 0)
+                {
+                    var snippingToolInstalled = false;
+                    foreach (var item in snippingTool)
+                    {
+                        if (item.PackageFamilyName == "Microsoft.ScreenSketch_8wekyb3d8bbwe")
+                        {
+                            snippingToolInstalled = true;
+                            break;
+                        }
+                    }
+                    if (snippingToolInstalled == false)
+                    {
+                        DidDecodeSucceed(2);
+                        return;
+                    }
+                }
+
+                if (Directory.Exists(screenshotFolder) == false)
+                {
+                    //unable to get screenshot folder to monitor
+                    DidDecodeSucceed(3);
+                    return;
+                }
+                watcher.Created += new FileSystemEventHandler(OnScreenshotDetected);
+                watcher.EnableRaisingEvents = true;
+                App.MainWindow.WindowState = WindowState.Minimized;
+                Proc = Process.Start(startInfo);
+                break;
+            default:
+
+                break;
         }
-        else if (lastWritten < timestamp)
+
+    }
+
+    //function to set App.MainWindow.WindowState = WindowState.Normal after process Proc has exited
+    private void WaitForProcExit(object sender, EventArgs e)
+    {
+        App.MainWindow.WindowState = WindowState.Normal;
+    }
+
+    private async void OnScreenshotDetected(object sender, FileSystemEventArgs e)
+    {
+        if (Proc == null)
         {
-            //no ss detected
-            DidDecodeSucceed(3);
-            App.MainWindow.Show();
-            BarcodeViewer.Source = null;
+            //App.MainWindow.WindowState = WindowState.Normal;
             return;
         }
+        Proc.Refresh();
+        if (Proc.HasExited == false)
+        {
+            Proc.WaitForExit();
+            App.MainWindow.WindowState = WindowState.Normal;
+        }
+
+        StorageFile _file = await StorageFile.GetFileFromPathAsync(e.FullPath);
+        string? path = _file.Path;
+
+        App.MainWindow.WindowState = WindowState.Normal;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            using (var bitmap = new Bitmap(path))
+            {
+                if (SilentDecodeBitmap(bitmap) == false)
+                {
+                    DidDecodeSucceed(1);
+                    stateManager(false);
+                    BarcodeViewer.Source = null;
+                }
+                else if (SilentDecodeBitmap(bitmap) == true)
+                {
+                    //App.MainWindow.WindowState = WindowState.Normal;
+                    var decoded = reader.Decode(bitmap);
+                    lastDecodedType = decoded.BarcodeFormat.ToString();
+                    TxtActivityLog.Text = decoded.Text;
+                    lastDecoded = bitmap;
+                    DidDecodeSucceed(0);
+                    BarcodeViewer.Visibility = Visibility.Visible;
+                    BitmapToImageSource(lastDecoded);
+                    stateManager(true);
+                    if (IsWifiCode(decoded.Text))
+                    {
+                        ClearTagsButton.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        ClearTagsButton.Visibility = Visibility.Collapsed;
+                    }
+
+                }
+                bitmap.Dispose();
+            }
+
+        });
+
+
     }
+
 
     public async void DecodeFromFile(string filepath)
     {
@@ -1304,8 +1417,6 @@ public partial class DecodePage : Page
             return;
         }
 
-
-
         if (ZoomSlider.IsEnabled == true)
         {
             if (BarcodeViewer != null)
@@ -1334,8 +1445,5 @@ public partial class DecodePage : Page
         }
     }
 
-    private void ClearTagsButton_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-    {
 
-    }
 }

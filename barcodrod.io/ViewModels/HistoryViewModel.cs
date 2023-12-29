@@ -2,9 +2,9 @@
 
 namespace barcodrod.io.ViewModels;
 
-public class EncodeViewModel : ObservableRecipient
+public partial class HistoryViewModel : ObservableRecipient
 {
-    public EncodeViewModel()
+    public HistoryViewModel()
     {
     }
 }
