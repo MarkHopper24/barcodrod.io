@@ -13,16 +13,12 @@ namespace barcodrod.io.Views;
 // TODO: Update NavigationViewItem titles and icons in ShellPage.xaml.
 public sealed partial class ShellPage : Page
 {
-    public ShellViewModel ViewModel
-    {
-        get;
-    }
+    public ShellViewModel ViewModel { get; }
 
     public ShellPage(ShellViewModel viewModel)
     {
         ViewModel = viewModel;
         InitializeComponent();
-
 
 
         ViewModel.NavigationService.Frame = NavigationFrame;
@@ -34,32 +30,30 @@ public sealed partial class ShellPage : Page
         AppTitleBarText.Text = "AppDisplayName".GetLocalized();
     }
 
-    private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        //if (App.MainWindow.Height < 473 || App.MainWindow.Width < 1330) { App.MainWindow.SetWindowSize(1330, 483); }
         TitleBarHelper.UpdateTitleBar(RequestedTheme);
 
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.GoBack));
-
-
     }
 
-    private void OnClosed(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    private void OnClosed(object sender, RoutedEventArgs e)
     {
-        Process.GetCurrentProcess().Kill();
-
+        Process.GetCurrentProcess().Close();
     }
 
     private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
-        var resource = args.WindowActivationState == WindowActivationState.Deactivated ? "WindowCaptionForegroundDisabled" : "WindowCaptionForeground";
+        var resource = args.WindowActivationState == WindowActivationState.Deactivated
+            ? "WindowCaptionForegroundDisabled"
+            : "WindowCaptionForeground";
 
-        AppTitleBarText.Foreground = (SolidColorBrush)App.Current.Resources[resource];
-
+        AppTitleBarText.Foreground = (SolidColorBrush)Application.Current.Resources[resource];
     }
 
-    private void NavigationViewControl_DisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args)
+    private void NavigationViewControl_DisplayModeChanged(NavigationView sender,
+        NavigationViewDisplayModeChangedEventArgs args)
     {
         AppTitleBar.Margin = new Thickness()
         {
@@ -74,17 +68,15 @@ public sealed partial class ShellPage : Page
     {
         var keyboardAccelerator = new KeyboardAccelerator() { Key = key };
 
-        if (modifiers.HasValue)
-        {
-            keyboardAccelerator.Modifiers = modifiers.Value;
-        }
+        if (modifiers.HasValue) keyboardAccelerator.Modifiers = modifiers.Value;
 
         keyboardAccelerator.Invoked += OnKeyboardAcceleratorInvoked;
 
         return keyboardAccelerator;
     }
 
-    private static void OnKeyboardAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    private static void OnKeyboardAcceleratorInvoked(KeyboardAccelerator sender,
+        KeyboardAcceleratorInvokedEventArgs args)
     {
         var navigationService = App.GetService<INavigationService>();
 

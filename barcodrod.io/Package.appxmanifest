@@ -12,7 +12,7 @@
   <Identity
     Name="53383MarkHopper.570136E6C1E54"
     Publisher="CN=ADA72B16-B88A-4477-94E0-44F1442A4EAE"
-    Version="1.8.0.0" />
+    Version="1.8.1.0" />
 
   <Properties>
     <DisplayName>barcodrod.io</DisplayName>

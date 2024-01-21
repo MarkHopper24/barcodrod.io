@@ -11,40 +11,46 @@
     <Grid x:Name="PageGrid">
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <InfoBar   Margin="0,0,9,50" Canvas.ZIndex="1" Grid.Column="1" HorizontalAlignment="Stretch"   x:Name="ScanResult"   IsOpen="False" HorizontalContentAlignment="Stretch"  VerticalAlignment="Bottom"  ></InfoBar>
+        <InfoBar Margin="0,0,9,50" Canvas.ZIndex="1" Grid.Column="1" HorizontalAlignment="Stretch" x:Name="ScanResult"
+                 IsOpen="False" HorizontalContentAlignment="Stretch" VerticalAlignment="Bottom" />
 
-        <TeachingTip x:Name="TeachingTip" Grid.Column="2" Title="Decoding..." VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
+        <TeachingTip x:Name="TeachingTip" Grid.Column="2" Title="Decoding..." VerticalAlignment="Stretch"
+                     HorizontalAlignment="Stretch">
             <TeachingTip.CloseButtonStyle>
                 <Style TargetType="Button">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="CornerRadius" Value="4"/>
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="CornerRadius" Value="4" />
                 </Style>
             </TeachingTip.CloseButtonStyle>
             <TeachingTip.CloseButtonContent>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" >
-                    <TextBlock Text=" Cancel"  VerticalAlignment="Stretch" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                    <TextBlock Text=" Cancel" VerticalAlignment="Stretch" />
                 </StackPanel>
             </TeachingTip.CloseButtonContent>
 
             <TeachingTip.Content>
                 <StackPanel>
-                    <ProgressRing x:Name="progressRing" IsActive="False" IsIndeterminate="False" Margin="0,0,0,5" Height="115" Width="115"/>
-                    <TextBlock x:Name="TotalFiles" Margin="0,0,0,5" HorizontalAlignment="Center" Style="{ThemeResource BaseTextBlockStyle}" FontSize="20" />
-                    <TextBlock x:Name="FailedDecodeProgressStat" Margin="0,0,0,20" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="WrapWholeWords" Visibility="Collapsed"/>
+                    <ProgressRing x:Name="progressRing" IsActive="False" IsIndeterminate="False" Margin="0,0,0,5"
+                                  Height="115" Width="115" />
+                    <TextBlock x:Name="TotalFiles" Margin="0,0,0,5" HorizontalAlignment="Center"
+                               Style="{ThemeResource BaseTextBlockStyle}" FontSize="20" />
+                    <TextBlock x:Name="FailedDecodeProgressStat" Margin="0,0,0,20" HorizontalAlignment="Center"
+                               TextAlignment="Center" TextWrapping="WrapWholeWords" Visibility="Collapsed" />
                     <Button x:Name="SaveCsv" HorizontalAlignment="Stretch" Click="SaveCSV" Margin="0">
-                        <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
-                            <SymbolIcon  Symbol="Save" VerticalAlignment="Stretch"/>
-                            <TextBlock x:Name="SaveCsvTextBlock" Text="Save .CSV File"  Margin="5,0,0,0" IsColorFontEnabled="True" />
+                        <StackPanel Orientation="Horizontal" Height="Auto" HorizontalAlignment="Stretch">
+                            <SymbolIcon Symbol="Save" VerticalAlignment="Stretch" />
+                            <TextBlock x:Name="SaveCsvTextBlock" Text="Save .CSV File" Margin="5,0,0,0"
+                                       IsColorFontEnabled="True" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="OpenCsv" HorizontalAlignment="Stretch" Click="OpenCSV"  Margin="0,10,0,0">
-                        <StackPanel Orientation="Horizontal" Height="Auto"  HorizontalAlignment="Stretch">
-                            <SymbolIcon  Symbol="OpenWith" VerticalAlignment="Stretch"/>
-                            <TextBlock  Text="Open .CSV File"  Margin="5,0,0,0" IsColorFontEnabled="True" />
+                    <Button x:Name="OpenCsv" HorizontalAlignment="Stretch" Click="OpenCSV" Margin="0,10,0,0">
+                        <StackPanel Orientation="Horizontal" Height="Auto" HorizontalAlignment="Stretch">
+                            <SymbolIcon Symbol="OpenWith" VerticalAlignment="Stretch" />
+                            <TextBlock Text="Open .CSV File" Margin="5,0,0,0" IsColorFontEnabled="True" />
                         </StackPanel>
                     </Button>
 
@@ -53,55 +59,72 @@
 
         </TeachingTip>
 
-        <ScrollViewer Margin= "10,10,0,0" Padding="0,0,10,0" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled" >
-            <StackPanel x:Name="ButtonStackPanel" Grid.Column="0"  Grid.ColumnSpan="1"   Width="Auto" VerticalAlignment="Top" Height="Auto"  HorizontalAlignment="Stretch"    >
-                <Button x:Name="DecodeFromSnippingToolButton" ToolTipService.ToolTip="Launch Snipping Tool and decode the captured screenshot."  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"  Margin="0,0,0,5"  Tapped="DecodeFromSnippingTool" Height="Auto">
-                    <StackPanel Orientation="Horizontal" >
-                        <SymbolIcon  Symbol="Cut"/>
-                        <TextBlock  Text="Snipping Tool"  Margin="5"/>
-                    </StackPanel>
-                </Button>
-                <Button x:Name="DecodeFromClipboardButton" VerticalAlignment="Stretch" ToolTipService.ToolTip="Decode an image from your clipboard."   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromClipboard" Height="Auto">
+        <ScrollViewer Margin="10,10,0,0" Padding="0,0,10,0" ScrollViewer.VerticalScrollBarVisibility="Visible"
+                      ScrollViewer.VerticalScrollMode="Enabled">
+            <StackPanel x:Name="ButtonStackPanel" Width="Auto"
+                        VerticalAlignment="Top" Height="Auto" HorizontalAlignment="Stretch">
+                <Button x:Name="DecodeFromSnippingToolButton"
+                        ToolTipService.ToolTip="Launch Snipping Tool and decode the captured screenshot."
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,5"
+                        Tapped="DecodeFromSnippingTool" Height="Auto">
                     <StackPanel Orientation="Horizontal">
-                        <SymbolIcon  Symbol="Paste"/>
-                        <TextBlock  Text="Clipboard Image"  Margin="5"/>
+                        <SymbolIcon Symbol="Cut" />
+                        <TextBlock Text="Snipping Tool" Margin="5" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="DecodeFromFileButton" VerticalAlignment="Stretch" ToolTipService.ToolTip="Select an image file to decode."   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromFilePicker" Height="Auto">
+                <Button x:Name="DecodeFromClipboardButton" VerticalAlignment="Stretch"
+                        ToolTipService.ToolTip="Decode an image from your clipboard." HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromClipboard" Height="Auto">
                     <StackPanel Orientation="Horizontal">
-                        <SymbolIcon  Symbol="BrowsePhotos"/>
-                        <TextBlock  Text="Image File"  Margin="5"/>
+                        <SymbolIcon Symbol="Paste" />
+                        <TextBlock Text="Clipboard Image" Margin="5" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="ImageFolderButton" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Decode a folder of images and save the results to a .csv file."  HorizontalContentAlignment="Center"  Margin="0,0,0,5"  Height="Auto" Tapped="BulkDecode">
-                    <StackPanel Orientation="Horizontal" >
+                <Button x:Name="DecodeFromFileButton" VerticalAlignment="Stretch"
+                        ToolTipService.ToolTip="Select an image file to decode." HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromFilePicker"
+                        Height="Auto">
+                    <StackPanel Orientation="Horizontal">
+                        <SymbolIcon Symbol="BrowsePhotos" />
+                        <TextBlock Text="Image File" Margin="5" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="ImageFolderButton" HorizontalAlignment="Stretch"
+                        ToolTipService.ToolTip="Decode a folder of images and save the results to a .csv file."
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Height="Auto" Tapped="BulkDecode">
+                    <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xe8b7;" />
-                        <TextBlock  Text="Folder"  Margin="5"/>
+                        <TextBlock Text="Folder" Margin="5" />
                     </StackPanel>
                 </Button>
-                <Button  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center"  Margin="0,0,0,5" Tapped="CustomCameraCaptureUI" Height="Auto" Visibility="Collapsed">
+                <Button HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Margin="0,0,0,5" Tapped="CustomCameraCaptureUI" Height="Auto" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
-                        <SymbolIcon  Symbol="Camera"/>
-                        <TextBlock x:Name="WebcamButton"  Text="Windows Camera"  Margin="5"/>
+                        <SymbolIcon Symbol="Camera" />
+                        <TextBlock x:Name="WebcamButton" Text="Windows Camera" Margin="5" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="DirectShowButton" HorizontalAlignment="Stretch"  ToolTipService.ToolTip="Decode using the selected video source." VerticalAlignment="Stretch" HorizontalContentAlignment="Center"  Margin="0,0,0,5"  Height="Auto" IsEnabled="False">
+                <Button x:Name="DirectShowButton" HorizontalAlignment="Stretch"
+                        ToolTipService.ToolTip="Decode using the selected video source." VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Height="Auto" IsEnabled="False">
                     <StackPanel Orientation="Horizontal">
-                        <SymbolIcon  Symbol="Video"/>
-                        <TextBlock x:Name="DirectShowButtonTextBlock"  Text="Webcam"  Margin="5"/>
+                        <SymbolIcon Symbol="Video" />
+                        <TextBlock x:Name="DirectShowButtonTextBlock" Text="Webcam" Margin="5" />
                     </StackPanel>
                 </Button>
 
-                <ComboBox x:Name="comboBox1"  ToolTipService.ToolTip="Webcam source" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"  Margin="0,0,0,5" Height="Auto" SelectionChanged="DirectShowSourceChanged" PlaceholderText="Source">
-
-                </ComboBox>
-                <ComboBox x:Name="comboBox2" VerticalAlignment="Bottom"  ToolTipService.ToolTip="Camera resolution" HorizontalAlignment="Stretch"  Margin="0,0,0,5" Height="Auto" PlaceholderText="Select Resolution"  Visibility="Collapsed">
-
-                </ComboBox>
-                <Button x:Name="ClearButton"  ToolTipService.ToolTip="Clear text field and barcode image." VerticalAlignment="Bottom" HorizontalAlignment="Stretch"  Margin="0,0,0,5" Tapped="ClearState" Height="Auto" >
+                <ComboBox x:Name="comboBox1" ToolTipService.ToolTip="Webcam source" VerticalAlignment="Bottom"
+                          HorizontalAlignment="Stretch" Margin="0,0,0,5" Height="Auto"
+                          SelectionChanged="DirectShowSourceChanged" PlaceholderText="Source" />
+                <ComboBox x:Name="comboBox2" VerticalAlignment="Bottom" ToolTipService.ToolTip="Camera resolution"
+                          HorizontalAlignment="Stretch" Margin="0,0,0,5" Height="Auto"
+                          PlaceholderText="Select Resolution" Visibility="Collapsed" />
+                <Button x:Name="ClearButton" ToolTipService.ToolTip="Clear text field and barcode image."
+                        VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,5" Tapped="ClearState"
+                        Height="Auto">
                     <StackPanel Orientation="Horizontal">
-                        <SymbolIcon  Symbol="Delete" Foreground="Red" Opacity=".5"/>
-                        <TextBlock Text="Clear All"   Margin="5" IsColorFontEnabled="True"/>
+                        <SymbolIcon Symbol="Delete" Foreground="Red" Opacity=".5" />
+                        <TextBlock Text="Clear All" Margin="5" IsColorFontEnabled="True" />
                     </StackPanel>
                 </Button>
 
@@ -109,46 +132,63 @@
 
         </ScrollViewer>
 
-        <CommandBar  x:Name="TxtCommandBar"  CornerRadius="4" OverflowButtonVisibility="Auto"   IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"  IsOpen="False" DefaultLabelPosition="Collapsed"  Height="Auto"    Grid.Column="1"  Margin="0,10,0,0"  VerticalAlignment="Bottom" >
+        <CommandBar x:Name="TxtCommandBar" CornerRadius="4" OverflowButtonVisibility="Auto"
+                    IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center" IsOpen="False"
+                    DefaultLabelPosition="Collapsed" Height="Auto" Grid.Column="1" Margin="0,10,0,0"
+                    VerticalAlignment="Bottom">
 
             <CommandBar.Style>
                 <Style TargetType="CommandBar">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="CornerRadius" Value="4"/>
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="CornerRadius" Value="4" />
                 </Style>
             </CommandBar.Style>
-            <AppBarButton x:Name="CopyTextButton" ToolTipService.ToolTip="Copy Text"  Icon="Copy" Label='Copy Text' VerticalAlignment="Stretch"  Click="CopyTextToClipboard"   IsEnabled="False" CornerRadius="4" />
-            <AppBarButton x:Name="SaveTextButton" ToolTipService.ToolTip="Save text"  Icon="Save" Label="Save Text" Click="SaveText" IsEnabled="False" CornerRadius="4"/>
-            <AppBarButton x:Name="OpenTextButton" ToolTipService.ToolTip="Open Text" Icon="OpenWith" Label="Open Text" Click="OpenText"   IsEnabled="False"  CornerRadius="4" />
-            <AppBarButton  x:Name="ClearTagsButton" Click="ClearWifiTags" Icon="Remove" Label="Wi-Fi Tags"  CornerRadius="4" Visibility="Collapsed" />
+            <AppBarButton x:Name="CopyTextButton" ToolTipService.ToolTip="Copy Text" Icon="Copy" Label='Copy Text'
+                          VerticalAlignment="Stretch" Click="CopyTextToClipboard" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="SaveTextButton" ToolTipService.ToolTip="Save text" Icon="Save" Label="Save Text"
+                          Click="SaveText" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="OpenTextButton" ToolTipService.ToolTip="Open Text" Icon="OpenWith" Label="Open Text"
+                          Click="OpenText" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="ClearTagsButton" Click="ClearWifiTags" Icon="Remove" Label="Wi-Fi Tags"
+                          CornerRadius="4" Visibility="Collapsed" />
 
-            <AppBarButton x:Name="OpenTextWithButton" Icon="Share" Label="Launch" Click="ShareText"  ToolTipService.ToolTip="Launch decoded content directly into an app."  IsEnabled="False"  CornerRadius="4" />
+            <AppBarButton x:Name="OpenTextWithButton" Icon="Share" Label="Launch" Click="ShareText"
+                          ToolTipService.ToolTip="Launch decoded content directly into an app." IsEnabled="False"
+                          CornerRadius="4" />
 
         </CommandBar>
 
-        <TextBox Grid.Column="1"    x:Name="TxtActivityLog"  Padding="8,5,8,0" Canvas.ZIndex="0"  Margin="0,10,10,50" Height="Auto"
-                 AcceptsReturn="True" TextWrapping="Wrap" 
-                      IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"    ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled" PlaceholderText="Pick a tool on the left to begin decoding." />
+        <TextBox Grid.Column="1" x:Name="TxtActivityLog" Padding="8,5,8,0" Canvas.ZIndex="0" Margin="0,10,10,50"
+                 Height="Auto"
+                 AcceptsReturn="True" TextWrapping="Wrap"
+                 IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                 ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled"
+                 PlaceholderText="Pick a tool on the left to begin decoding." />
 
-        <CommandBar   CornerRadius="4" OverflowButtonVisibility="Auto"  DefaultLabelPosition="Collapsed" IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center"    Height="Auto"    Grid.Column="2"  Margin="0,0,0,0"  VerticalAlignment="Bottom" >
+        <CommandBar CornerRadius="4" OverflowButtonVisibility="Auto" DefaultLabelPosition="Collapsed"
+                    IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center" Height="Auto"
+                    Grid.Column="2" Margin="0,0,0,0" VerticalAlignment="Bottom">
             <CommandBar.Style>
                 <Style TargetType="CommandBar">
-                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Background" Value="Transparent" />
                 </Style>
             </CommandBar.Style>
-            <AppBarButton x:Name="CopyImageButton" ToolTipService.ToolTip="Copy Image"   Icon="Copy" Label="Copy Image" Click="CopyImage" IsEnabled="False" CornerRadius="4"/>
-            <AppBarButton x:Name="SaveImageButton" Icon="Save" Label="Save Image" ToolTipService.ToolTip="Save Image"  Click="SaveImage"  IsEnabled="False" CornerRadius="4"/>
-            <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image'  Click="OpenImage" ToolTipService.ToolTip="Open Image"   IsEnabled="False" CornerRadius="4">
-            </AppBarButton>
-            <AppBarButton x:Name="ZoomToggle" ToolTipService.ToolTip="Switch between zoom and fit mode."   IsEnabled="False" Click="ToggleZoom"  Label="Fill Mode"  CornerRadius="4">
+            <AppBarButton x:Name="CopyImageButton" ToolTipService.ToolTip="Copy Image" Icon="Copy" Label="Copy Image"
+                          Click="CopyImage" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="SaveImageButton" Icon="Save" Label="Save Image" ToolTipService.ToolTip="Save Image"
+                          Click="SaveImage" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image' Click="OpenImage"
+                          ToolTipService.ToolTip="Open Image" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="ZoomToggle" ToolTipService.ToolTip="Switch between zoom and fit mode."
+                          IsEnabled="False" Click="ToggleZoom" Label="Fill Mode" CornerRadius="4">
                 <AppBarButton.Icon>
-                    <FontIcon  Glyph="&#xe9a6;" />
+                    <FontIcon Glyph="&#xe9a6;" />
                 </AppBarButton.Icon>
             </AppBarButton>
             <AppBarElementContainer VerticalAlignment="Top">
 
                 <Slider x:Name="ZoomSlider" Margin="5,10,0,0" IsEnabled="False" Visibility="Collapsed"
-                        
+
                         Maximum="{x:Bind BarcodeScroller.MaxZoomFactor, Mode=OneWay}"
                         Minimum="{x:Bind BarcodeScroller.MinZoomFactor, Mode=OneWay}"
                         Value="2"
@@ -159,14 +199,18 @@
             </AppBarElementContainer>
 
         </CommandBar>
-        <ScrollViewer  Grid.Column = "2" x:Name="BarcodeScroller"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,10,50" IsEnabled="False" Padding="10" Visibility="Collapsed" ZoomMode="Enabled" />
-        <Image Grid.Column = "2" x:Name="BarcodeViewer"   Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,10,10,50"  >
+        <ScrollViewer Grid.Column="2" x:Name="BarcodeScroller" HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" Margin="0,0,10,50" IsEnabled="False" Padding="10"
+                      Visibility="Collapsed" ZoomMode="Enabled" />
+        <Image Grid.Column="2" x:Name="BarcodeViewer" Stretch="Uniform" HorizontalAlignment="Stretch"
+               VerticalAlignment="Top" Margin="0,10,10,50">
 
             <Image.ContextFlyout>
                 <CommandBarFlyout x:Name="ImageRightClickCommandBar">
-                    <AppBarButton Label="Copy" Icon="Copy" ToolTipService.ToolTip="Copy" Click="CopyImage"/>
+                    <AppBarButton Label="Copy" Icon="Copy" ToolTipService.ToolTip="Copy" Click="CopyImage" />
                     <AppBarButton Label="Save" Icon="Save" ToolTipService.ToolTip="Save" Click="SaveImage" />
-                    <AppBarButton x:Name="ShareCommandBarButton" Label="Share" Icon="Share" ToolTipService.ToolTip="Share" Click="OpenImage" Visibility="Collapsed" />
+                    <AppBarButton x:Name="ShareCommandBarButton" Label="Share" Icon="Share"
+                                  ToolTipService.ToolTip="Share" Click="OpenImage" Visibility="Collapsed" />
                 </CommandBarFlyout>
 
             </Image.ContextFlyout>

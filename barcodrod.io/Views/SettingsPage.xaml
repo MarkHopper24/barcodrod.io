@@ -14,38 +14,39 @@
         <StackPanel
             x:Name="ContentArea">
 
-            <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="10,0,0,0" />
+            <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Margin="10,0,0,0" />
             <StackPanel Orientation="Horizontal">
                 <StackPanel Margin="15,10,0,20">
                     <TextBlock x:Uid="Settings_Theme" />
 
                     <StackPanel Margin="{StaticResource XSmallTopMargin}">
                         <RadioButton
-                        x:Uid="Settings_Theme_Light"
-                        Command="{x:Bind ViewModel.SwitchThemeCommand}"
-                        IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}"
-                        FontSize="15"
-                        GroupName="AppTheme">
+                            x:Uid="Settings_Theme_Light"
+                            Command="{x:Bind ViewModel.SwitchThemeCommand}"
+                            IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Light, Mode=OneWay}"
+                            FontSize="15"
+                            GroupName="AppTheme">
                             <RadioButton.CommandParameter>
                                 <xaml:ElementTheme>Light</xaml:ElementTheme>
                             </RadioButton.CommandParameter>
                         </RadioButton>
                         <RadioButton
-                        x:Uid="Settings_Theme_Dark"
-                        Command="{x:Bind ViewModel.SwitchThemeCommand}"
-                        IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}"
-                        FontSize="15"
-                        GroupName="AppTheme">
+                            x:Uid="Settings_Theme_Dark"
+                            Command="{x:Bind ViewModel.SwitchThemeCommand}"
+                            IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dark, Mode=OneWay}"
+                            FontSize="15"
+                            GroupName="AppTheme">
                             <RadioButton.CommandParameter>
                                 <xaml:ElementTheme>Dark</xaml:ElementTheme>
                             </RadioButton.CommandParameter>
                         </RadioButton>
                         <RadioButton
-                        x:Uid="Settings_Theme_Default"
-                        Command="{x:Bind ViewModel.SwitchThemeCommand}"
-                        IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Default, Mode=OneWay}"
-                        FontSize="15"
-                        GroupName="AppTheme">
+                            x:Uid="Settings_Theme_Default"
+                            Command="{x:Bind ViewModel.SwitchThemeCommand}"
+                            IsChecked="{x:Bind ViewModel.ElementTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Default, Mode=OneWay}"
+                            FontSize="15"
+                            GroupName="AppTheme">
                             <RadioButton.CommandParameter>
                                 <xaml:ElementTheme>Default</xaml:ElementTheme>
                             </RadioButton.CommandParameter>
@@ -56,7 +57,8 @@
                 </StackPanel>
 
                 <StackPanel Margin="20,10,0,20">
-                    <RadioButtons x:Name="Backdrops" SelectionChanged="UpdateBackDrop" SelectedIndex="0" Header="Backdrop:">
+                    <RadioButtons x:Name="Backdrops" SelectionChanged="UpdateBackDrop" SelectedIndex="0"
+                                  Header="Backdrop:">
                         <x:String>Mica Alt</x:String>
                         <x:String>Mica</x:String>
                         <x:String>Acrylic</x:String>
@@ -65,11 +67,12 @@
                 </StackPanel>
 
                 <StackPanel Margin="20,10,0,20">
-                    <TextBlock Text="History" />
+                    <TextBlock Text="History: " />
 
                     <StackPanel Margin="{StaticResource XSmallTopMargin}">
 
-                        <CheckBox x:Name="HistoryEnabled" FontSize="15" Content="Enabled" Margin="0,0,0,0"  Checked="EnableHistory" Unchecked="DisableHistory"/>
+                        <CheckBox x:Name="HistoryEnabled" FontSize="15" Content="Enabled" Margin="0,0,0,0"
+                                  Checked="EnableHistory" Unchecked="DisableHistory" />
 
 
                     </StackPanel>
@@ -78,20 +81,25 @@
             </StackPanel>
 
 
-            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="10,0,0,0" VerticalAlignment="Bottom"  />
+            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="10,0,0,0"
+                       VerticalAlignment="Bottom" />
 
-            <StackPanel Margin="15,10,0,0" >
-                <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}" Style="{ThemeResource BodyTextBlockStyle}" />
+            <StackPanel Margin="15,10,0,0">
+                <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}"
+                           Style="{ThemeResource BodyTextBlockStyle}" />
 
                 <TextBlock
                     x:Uid="Settings_AboutDescription"
                     Margin="{StaticResource XSmallTopMargin}"
                     Style="{ThemeResource BodyTextBlockStyle}" />
                 <StackPanel Orientation="Horizontal" Spacing="50">
-                    <HyperlinkButton Content="barcodrod.io" NavigateUri="https://barcodrod.io"  Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
-                    <HyperlinkButton Content="GitHub" NavigateUri="https://github.com/MarkHopper24/barcodrod.io"  Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
+                    <HyperlinkButton Content="barcodrod.io" NavigateUri="https://barcodrod.io"
+                                     Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
+                    <HyperlinkButton Content="GitHub" NavigateUri="https://github.com/MarkHopper24/barcodrod.io"
+                                     Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
 
-                    <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink" Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
+                    <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink"
+                                     Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
                 </StackPanel>
             </StackPanel>
 
