@@ -17,7 +17,7 @@
 
 
 ## Overview
-barcodrod.io is a free, modern barcode and QR code toolkit for Windows. Decode 17 different barcode types using the Windows Snipping Tool, an image file, your clipboard, or webcam. Create 13 different types of barcodes from text. 
+<a href="https://barcodrod.io">barcodrod.io</a> is a free, modern barcode and QR code toolkit for Windows. Decode 17 different barcode types using the Windows Snipping Tool, an image file, your clipboard, or webcam. Create 13 different types of barcodes from text. 
 
 barcodrod.io is built on the WinAppSDK, WinUI3, .NET 6, and the ZXing.Net library.
 
@@ -36,7 +36,9 @@ Method 3: From Windows Package Manager using winget via command line
 winget install --name barcodrod.io
 ```
 
-Method 4: Building the solution on your own in Visual Studio using the provided source code.
+For now, barcodrod.io requires an internet connection on installation  for license acquisition through the Microsoft Store (this includes the build hosted in this repository). After first installation, it can be used fully offline. It is a planned roadmap item to implement an fully offline installation method.
+
+Method 4: Building the solution on your own in Visual Studio using the provided source code (this method does not require a network connection).
 
 ## Usage
 Includes support for the following barcode formats:
@@ -61,6 +63,36 @@ Decode only:
 - RSS_14
 - RSS_EXPANDED
 - EAN_13
+
+## Features
+### Decoding
+- Read QR codes and barcodes from:
+  1. The Windows Snipping Tool app.
+  2. An image file on your PC.
+  3. A folder on your PC to decode images in bulk.
+  4. Images copied and pasted from your clipboard.
+  5. Video sources such as webcams, OBS virtual cameras, or the Windows Camera app.
+- Launch decoded results directly into other apps.
+
+### Encoding
+- Built-in helper templates to generate Wi-fi, Email, and vCard (contact card) QR codes. 
+- Custom colors, margins, and error correction settings.
+
+### History
+- View, manage, and export history of QR codes and barcodes read and created on your PC. (Can be disabled).
+
+### Interface
+- Built natively for Windows using WinUI3 and the Windows App SDK; offering a simple, familiar, and fast user interface. 
+- Supports light and dark themes, as well as three different backdrop options.
+
+## Privacy Notes
+- Barcodes processed with barcodrod.io are read and created locally on your PC, no network connection is required. For now, barcodrod.io requires an internet connection on installation for license acquisition through the Microsoft Store (this includes the build hosted in this repository). After first installation, it can be used fully offline. It is a planned roadmap item to implement an fully offline installation method.
+
+- barcodrod.io does not collect any decoded or generated QR or barcode data.
+
+- barcodrod.io allows you to inspect QR code contents and URLs before opening them, helping verify the legitimacy of the links and data encoded in the QR codes. 
+
+- barcodrod.io does not inject any URL redirection services in the generated QR codes; what you enter into the code is exactly what gets created.
 
 ## Support
 - This project is a work in progress. Any contributions, suggestions, fixes, bug reports, and feature requests are welcome.
