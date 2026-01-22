@@ -161,13 +161,13 @@ public partial class DecodePage : Page
     {
         try
         {
-            var savedIndex = await _localSettingsService.ReadSettingAsync<int>(WebcamSourceSettingsKey);
+            var savedIndex = await _localSettingsService.ReadSettingAsync<int?>(WebcamSourceSettingsKey);
             
-            // Validate that the saved index is within the valid range
-            if (savedIndex >= 0 && savedIndex < comboBox1.Items.Count)
+            // Only restore if a setting was previously saved and is within valid range
+            if (savedIndex.HasValue && savedIndex.Value >= 0 && savedIndex.Value < comboBox1.Items.Count)
             {
-                comboBox1.SelectedIndex = savedIndex;
-                Log($"Restored last selected webcam source: {comboBox1.Items[savedIndex]}");
+                comboBox1.SelectedIndex = savedIndex.Value;
+                Log($"Restored last selected webcam source: {comboBox1.Items[savedIndex.Value]}");
             }
         }
         catch (Exception ex)
