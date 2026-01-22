@@ -161,13 +161,24 @@ public partial class DecodePage : Page
     {
         try
         {
-            var savedIndex = await _localSettingsService.ReadSettingAsync<int?>(WebcamSourceSettingsKey);
+            var savedDeviceName = await _localSettingsService.ReadSettingAsync<string>(WebcamSourceSettingsKey);
             
-            // Only restore if a setting was previously saved and is within valid range
-            if (savedIndex.HasValue && savedIndex.Value >= 0 && savedIndex.Value < comboBox1.Items.Count)
+            // Only restore if a setting was previously saved
+            if (!string.IsNullOrEmpty(savedDeviceName))
             {
-                comboBox1.SelectedIndex = savedIndex.Value;
-                Log($"Restored last selected webcam source: {comboBox1.Items[savedIndex.Value]}");
+                // Try to find the saved device in the current list
+                for (int i = 0; i < comboBox1.Items.Count; i++)
+                {
+                    if (comboBox1.Items[i].ToString() == savedDeviceName)
+                    {
+                        comboBox1.SelectedIndex = i;
+                        Log($"Restored last selected webcam source: {savedDeviceName}");
+                        return;
+                    }
+                }
+                
+                // If we get here, the saved device was not found
+                Log($"Previously saved webcam source '{savedDeviceName}' is no longer available");
             }
         }
         catch (Exception ex)
@@ -358,10 +369,10 @@ public partial class DecodePage : Page
 
             Log("DirectShow source changed to " + comboBox1.SelectedItem.ToString());
             
-            // Save the selected webcam source index
+            // Save the selected webcam source name (not index, to handle device changes)
             try
             {
-                await _localSettingsService.SaveSettingAsync(WebcamSourceSettingsKey, comboBox1.SelectedIndex);
+                await _localSettingsService.SaveSettingAsync(WebcamSourceSettingsKey, comboBox1.SelectedItem.ToString());
             }
             catch (Exception ex)
             {
