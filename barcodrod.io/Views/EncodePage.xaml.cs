@@ -118,6 +118,11 @@ public sealed partial class EncodePage : Page
         if (TxtActivityLog.Text != null && TxtActivityLog.Text != "")
             try
             {
+                // Set UTF-8 encoding to properly handle Unicode characters (e.g., emojis)
+                if (writer.Format == BarcodeFormat.QR_CODE)
+                {
+                    writer.Options.Hints[EncodeHintType.CHARACTER_SET] = "UTF-8";
+                }
                 var barcode = writer.WriteAsBitmap(TxtActivityLog.Text);
                 BitmapToImageSource(barcode);
                 BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
