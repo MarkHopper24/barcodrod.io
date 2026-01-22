@@ -121,7 +121,9 @@ public sealed partial class EncodePage : Page
                 // Set UTF-8 encoding to properly handle Unicode characters (e.g., emojis)
                 if (writer.Format == BarcodeFormat.QR_CODE)
                 {
-                    writer.Options.Hints[EncodeHintType.CHARACTER_SET] = "UTF-8";
+                    if (writer.Options.Hints.ContainsKey(EncodeHintType.CHARACTER_SET))
+                        writer.Options.Hints.Remove(EncodeHintType.CHARACTER_SET);
+                    writer.Options.Hints.Add(EncodeHintType.CHARACTER_SET, "UTF-8");
                 }
                 var barcode = writer.WriteAsBitmap(TxtActivityLog.Text);
                 BitmapToImageSource(barcode);
