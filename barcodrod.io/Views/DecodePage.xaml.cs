@@ -1,5 +1,6 @@
 ﻿using AForge.Video;
 using AForge.Video.DirectShow;
+using barcodrod.io.Contracts.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -27,6 +28,9 @@ namespace barcodrod.io.Views;
 
 public partial class DecodePage : Page
 {
+    private const string WebcamSourceSettingsKey = "LastSelectedWebcamSource";
+    
+    private readonly ILocalSettingsService _localSettingsService;
     private BarcodeReader? reader = new();
     private FilterInfoCollection VideoCaptureDevices;
     private VideoCaptureDevice? SelectedDSSource;
@@ -46,6 +50,7 @@ public partial class DecodePage : Page
 
     public DecodePage()
     {
+        _localSettingsService = App.GetService<ILocalSettingsService>();
         InitializeComponent();
         InitializeLog();
         VideoCaptureDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
@@ -71,6 +76,9 @@ public partial class DecodePage : Page
                 .QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe").AsTask()
                 .Result;
             if (canLaunch == LaunchQuerySupportStatus.Available) comboBox1.Items.Add("Windows Camera app");
+            
+            // Load and restore the last selected webcam source
+            _ = LoadLastSelectedWebcamSourceAsync();
         }
 
         if (comboBox1.Items.Count == 0)
@@ -146,6 +154,25 @@ public partial class DecodePage : Page
         catch
         {
             return;
+        }
+    }
+
+    private async Task LoadLastSelectedWebcamSourceAsync()
+    {
+        try
+        {
+            var savedIndex = await _localSettingsService.ReadSettingAsync<int>(WebcamSourceSettingsKey);
+            
+            // Validate that the saved index is within the valid range
+            if (savedIndex >= 0 && savedIndex < comboBox1.Items.Count)
+            {
+                comboBox1.SelectedIndex = savedIndex;
+                Log($"Restored last selected webcam source: {comboBox1.Items[savedIndex]}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to load last selected webcam source: {ex.Message}");
         }
     }
 
@@ -304,7 +331,7 @@ public partial class DecodePage : Page
         }
     }
 
-    private void DirectShowSourceChanged(object sender, RoutedEventArgs e)
+    private async void DirectShowSourceChanged(object sender, RoutedEventArgs e)
     {
         if (comboBox1.SelectedItem != null) DirectShowButton.IsEnabled = true;
 
@@ -330,6 +357,16 @@ public partial class DecodePage : Page
             }
 
             Log("DirectShow source changed to " + comboBox1.SelectedItem.ToString());
+            
+            // Save the selected webcam source index
+            try
+            {
+                await _localSettingsService.SaveSettingAsync(WebcamSourceSettingsKey, comboBox1.SelectedIndex);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to save webcam source selection: {ex.Message}");
+            }
         }
 
 
