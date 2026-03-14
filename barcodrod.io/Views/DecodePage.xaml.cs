@@ -4,8 +4,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Navigation;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -256,12 +257,43 @@ public partial class DecodePage : Page
             }
 
             DidDecodeSucceed(0);
+            _ = AutoCopyIfEnabled(result);
+
             if (IsWifiCode(result))
                 ClearTagsButton.Visibility = Visibility.Visible;
             else
                 ClearTagsButton.Visibility = Visibility.Collapsed;
 
             return result;
+        }
+    }
+
+    private async Task AutoCopyIfEnabled(string text)
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            if (!File.Exists(settingsFilePath)) return;
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrEmpty(json)) return;
+
+            var settings = JObject.Parse(json);
+            var autoCopy = settings["AutoCopyToClipboard"];
+            if (autoCopy == null || !autoCopy.Value<bool>()) return;
+
+            var dataPackage = new DataPackage();
+            dataPackage.SetText(text);
+            Clipboard.SetContent(dataPackage);
+            Log("Auto-copied decoded text to clipboard.");
+
+            ScanResult.Message = lastDecodedType + " detected. Copied to clipboard.";
+        }
+        catch (Exception ex)
+        {
+            Log("Error auto-copying to clipboard: " + ex.Message);
         }
     }
 
@@ -301,6 +333,65 @@ public partial class DecodePage : Page
             Log("Re-adding Wi-fi tags.");
             TxtActivityLog.Text = WifiWithTags;
             ClearTagsButton.Icon = new SymbolIcon(Symbol.Remove);
+        }
+    }
+
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        await LoadWebcamSettings();
+    }
+
+    private async Task SaveWebcamSettings()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            JObject settings;
+            if (File.Exists(settingsFilePath))
+            {
+                var json = await File.ReadAllTextAsync(settingsFilePath);
+                settings = (!string.IsNullOrEmpty(json)) ? JObject.Parse(json) : new JObject();
+            }
+            else
+            {
+                settings = new JObject();
+            }
+
+            settings["WebcamSourceIndex"] = comboBox1.SelectedIndex;
+            File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadWebcamSettings()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            if (!File.Exists(settingsFilePath)) return;
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrEmpty(json)) return;
+
+            var settings = JObject.Parse(json);
+            var savedIndex = settings["WebcamSourceIndex"];
+            if (savedIndex == null) return;
+
+            var index = savedIndex.Value<int>();
+            if (index >= 0 && index < comboBox1.Items.Count)
+            {
+                comboBox1.SelectedIndex = index;
+            }
+        }
+        catch
+        {
         }
     }
 
@@ -344,6 +435,8 @@ public partial class DecodePage : Page
                 comboBox2.SelectedIndex = 0;
             }
         }
+
+        _ = SaveWebcamSettings();
     }
 
     private void killVideoFeed()
@@ -597,7 +690,7 @@ public partial class DecodePage : Page
     {
         ScanResult.IsOpen = false;
         ZoomToggle.Icon = new FontIcon
-            { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\xe9a6" };
+        { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\xe9a6" };
         ZoomToggle.IsEnabled = false;
         ZoomSlider.IsEnabled = false;
         BarcodeScroller.Visibility = Visibility.Collapsed;
@@ -647,32 +740,17 @@ public partial class DecodePage : Page
 
     private async void DecodeFromSnippingTool(object sender, RoutedEventArgs e)
     {
-        var Proc = new Process();
-        var startInfo = new ProcessStartInfo();
-        startInfo.UseShellExecute = true;
-        startInfo.FileName = "ms-screenclip:";
-        Process[] startingProcesses;
-        Process[] postLaunchProcesses;
         Bitmap? startingBitmap = null;
         var startingClipboardContent = Clipboard.GetContent();
 
         if (startingClipboardContent != null)
             if (startingClipboardContent.Contains(StandardDataFormats.Bitmap))
             {
-                Log("Bitmap found in clipboard.");
+                Log("Bitmap found in clipboard before launch.");
                 var data = await startingClipboardContent.GetBitmapAsync();
                 var bit = await data.OpenReadAsync();
-                var stream = bit.AsStreamForRead();
-                startingBitmap = new Bitmap(stream);
+                startingBitmap = new Bitmap(bit.AsStreamForRead());
             }
-
-
-        startingProcesses = Process.GetProcessesByName("SnippingTool");
-        Process[] startingProcesses2 = Process.GetProcessesByName("ScreenClippingHost");
-        //combine startingProcesses and startingProcesses2 
-        var startingProcesses3 = startingProcesses.Concat(startingProcesses2);
-        Log("Checking for running Snipping Tool processes.");
-        Log(startingProcesses3.Count().ToString() + " processes found.");
 
         App.MainWindow.WindowState = WindowState.Minimized;
         var uri = new Uri("ms-screenclip:");
@@ -684,92 +762,63 @@ public partial class DecodePage : Page
             Log("Failed to launch.");
             DidDecodeSucceed(2);
             App.MainWindow.WindowState = WindowState.Normal;
+            return;
         }
 
-        if (launchResult == true)
+        Log("Snipping Tool launched. Polling clipboard for new bitmap.");
+
+        // Poll clipboard for up to 60 seconds for a new bitmap
+        Bitmap? bitmap = null;
+        var timeout = DateTime.UtcNow.AddSeconds(60);
+        while (DateTime.UtcNow < timeout)
         {
-            Log("Succesfully launched.");
-            Log("Checking for running Snipping Tool processes.");
-            postLaunchProcesses = Process.GetProcessesByName("SnippingTool");
-            Process[] postLaunchProcesses2 = Process.GetProcessesByName("ScreenClippingHost");
+            await Task.Delay(500);
 
-            //combine postLaunchProcesses and postLaunchProcesses2
-            var postLaunchProcesses3 = postLaunchProcesses.Concat(postLaunchProcesses2);
-
-            //get the difference between preLaunchProcesses3 and postLaunchProcesses3
-            var difference = postLaunchProcesses3.Except(startingProcesses3);
-            Proc = difference.FirstOrDefault();
-            if (Proc != null)
+            try
             {
-                Log("barcodrod.io Snipping Tool process found. PID: " + Proc.Id.ToString());
-
-                await Proc.WaitForExitAsync();
-
-                // Check if the clipboard contains a bitmap
                 var clipboardContent = Clipboard.GetContent();
+                if (clipboardContent == null || !clipboardContent.Contains(StandardDataFormats.Bitmap))
+                    continue;
 
-                if (clipboardContent != null)
-                    if (clipboardContent.Contains(StandardDataFormats.Bitmap))
-                    {
-                        var data = await clipboardContent.GetBitmapAsync();
-                        var bit = await data.OpenReadAsync();
-                        var stream = bit.AsStreamForRead();
-                        var bitmap = new Bitmap(stream);
+                var data = await clipboardContent.GetBitmapAsync();
+                var bit = await data.OpenReadAsync();
+                var candidate = new Bitmap(bit.AsStreamForRead());
 
-                        if (bitmap != null)
-                        {
-                            Log("Bitmap found in clipboard.");
-                            if (startingBitmap != null)
-                            {
-                                Log(
-                                    "Checking if this bitmap is the same bitmap found prior to launching Snipping Tool.");
+                if (startingBitmap != null && CompareBitmaps(startingBitmap, candidate))
+                    continue; // clipboard hasn't changed yet
 
-                                var bitmapIsSame = CompareBitmaps(startingBitmap, bitmap);
-                                if (bitmapIsSame == true)
-                                {
-                                    Log("Same bitmap. Returning.");
-
-                                    DidDecodeSucceed(1);
-                                    BarcodeViewer.Source = null;
-                                    App.MainWindow.WindowState = WindowState.Normal;
-                                    return;
-                                }
-                            }
-
-                            Log("New bitmap. Decoding.");
-                            var result = DecodeBitmap(bitmap);
-                            if (result != null)
-                            {
-                                TxtActivityLog.Text = result;
-                                result.GetType().ToString();
-                                BitmapToImageSource(bitmap);
-
-                                DidDecodeSucceed(0);
-
-                                var Uri = await IsResultURI();
-                                if (Uri == true) OpenTextWithButton.IsEnabled = true;
-                            }
-                            else
-                            {
-                                DidDecodeSucceed(1);
-                                BarcodeViewer.Source = null;
-                            }
-                        }
-                        else
-                        {
-                            DidDecodeSucceed(1);
-                            BarcodeViewer.Source = null;
-                        }
-
-                        App.MainWindow.WindowState = WindowState.Normal;
-                    }
+                bitmap = candidate;
+                break;
             }
-            else
+            catch
             {
-                DidDecodeSucceed(2);
-                App.MainWindow.WindowState = WindowState.Normal;
-                return;
+                // clipboard access can fail transiently; keep polling
             }
+        }
+
+        App.MainWindow.WindowState = WindowState.Normal;
+
+        if (bitmap == null)
+        {
+            Log("No new bitmap detected in clipboard after Snipping Tool.");
+            DidDecodeSucceed(3);
+            return;
+        }
+
+        Log("New bitmap detected. Decoding.");
+        var result = DecodeBitmap(bitmap);
+        if (result != null)
+        {
+            TxtActivityLog.Text = result;
+            BitmapToImageSource(bitmap);
+            DidDecodeSucceed(0);
+            var isUri = await IsResultURI();
+            if (isUri) OpenTextWithButton.IsEnabled = true;
+        }
+        else
+        {
+            DidDecodeSucceed(1);
+            BarcodeViewer.Source = null;
         }
     }
 
@@ -1393,7 +1442,7 @@ public partial class DecodePage : Page
             BarcodeScroller.Visibility = Visibility.Visible;
 
             ZoomToggle.Icon = new FontIcon
-                { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\ue71e" };
+            { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\ue71e" };
             ZoomToggle.Label = "Zoom Mode";
 
             using (var memory = new MemoryStream())
@@ -1433,7 +1482,7 @@ public partial class DecodePage : Page
 
                 ZoomSlider.IsEnabled = false;
                 ZoomToggle.Icon = new FontIcon
-                    { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\xe9a6" };
+                { FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe MDL2 Assets"), Glyph = "\xe9a6" };
                 ZoomToggle.Label = "Fill Mode";
 
                 if (lastDecoded != null) BitmapToImageSource(lastDecoded);

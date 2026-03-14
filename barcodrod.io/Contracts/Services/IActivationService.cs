@@ -1,4 +1,7 @@
-﻿namespace barcodrod.io.Contracts.Services;
+﻿using System;
+using System.Threading.Tasks;
+
+namespace barcodrod.io.Contracts.Services;
 
 public interface IActivationService
 {

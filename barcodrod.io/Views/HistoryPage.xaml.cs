@@ -1,5 +1,4 @@
-﻿using barcodrod.io.ViewModels;
-using Microsoft.UI;
+﻿using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -16,7 +15,6 @@ public sealed partial class HistoryPage : Page
 {
     public HistoryPage()
     {
-        App.GetService<HistoryViewModel>();
         InitializeComponent();
         RefreshCounters();
         HistoryList.SelectionChanged += (s, e) => { RefreshCounters(); };

@@ -23,7 +23,6 @@
                        TextWrapping="NoWrap"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Margin="28,0,0,0" />
-
         </Grid>
         <NavigationView
             x:Name="NavigationViewControl"
@@ -55,6 +54,18 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem x:Name="PinNavItem" Tapped="PinButton_Click"
+                                    ToolTipService.ToolTip="Pin window on top"
+                                    SelectsOnInvoked="False">
+                    <NavigationViewItem.Icon>
+                        <FontIcon x:Name="PinIcon" Glyph="&#xE718;" />
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.Content>
+                        <TextBlock Text="Pin" />
+                    </NavigationViewItem.Content>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
 
             <i:Interaction.Behaviors>
 

@@ -77,6 +77,7 @@ public sealed partial class SettingsPage : Page
             //barcodrod.io defaults
             var historyEnabled = true;
             var backdropIndex = 0;
+            var autoCopyToClipboard = false;
             var currentBackdrop = App.MainWindow.SystemBackdrop;
 
 
@@ -88,7 +89,8 @@ public sealed partial class SettingsPage : Page
                 var data = new
                 {
                     HistoryEnabled = historyEnabled,
-                    BackdropIndex = backdropIndex
+                    BackdropIndex = backdropIndex,
+                    AutoCopyToClipboard = autoCopyToClipboard
                 };
 
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -106,6 +108,9 @@ public sealed partial class SettingsPage : Page
                     {
                         historyEnabled = loadedData.HistoryEnabled;
                         backdropIndex = loadedData.BackdropIndex;
+                        if (loadedData.AutoCopyToClipboard != null)
+                            autoCopyToClipboard = loadedData.AutoCopyToClipboard;
+
                         if (Backdrops.SelectedIndex != backdropIndex)
                         {
                             if (IsMicaSupported() == true)
@@ -145,6 +150,8 @@ public sealed partial class SettingsPage : Page
             SettingsLoaded = true;
             HistoryEnabled.IsChecked = historyEnabled;
             Backdrops.SelectedIndex = backdropIndex;
+            AutoCopyToClipboard.IsChecked = autoCopyToClipboard;
+
         }
         catch
         {
@@ -314,5 +321,29 @@ public sealed partial class SettingsPage : Page
                 App.MainWindow.SystemBackdrop = backdrop;
             }
         }
+    }
+
+    private async void EnableAutoCopy(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["AutoCopyToClipboard"] = true;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void DisableAutoCopy(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["AutoCopyToClipboard"] = false;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
     }
 }

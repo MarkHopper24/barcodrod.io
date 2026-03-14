@@ -1,5 +1,4 @@
 ﻿using barcodrod.io.Contracts.Services;
-using barcodrod.io.ViewModels;
 
 using Microsoft.UI.Xaml;
 
@@ -22,7 +21,7 @@ public class DefaultActivationHandler : ActivationHandler<LaunchActivatedEventAr
 
     protected async override Task HandleInternalAsync(LaunchActivatedEventArgs args)
     {
-        _navigationService.NavigateTo(typeof(DecodeViewModel).FullName!, args.Arguments);
+        _navigationService.NavigateTo("barcodrod.io.ViewModels.DecodeViewModel", args.Arguments);
 
         await Task.CompletedTask;
     }

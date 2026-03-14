@@ -1,7 +1,5 @@
 ﻿using barcodrod.io.Activation;
 using barcodrod.io.Contracts.Services;
-using barcodrod.io.Core.Contracts.Services;
-using barcodrod.io.Core.Services;
 using barcodrod.io.Models;
 using barcodrod.io.Services;
 using barcodrod.io.ViewModels;
@@ -12,14 +10,8 @@ using Microsoft.UI.Xaml;
 
 namespace barcodrod.io;
 
-// To learn more about WinUI 3, see https://docs.microsoft.com/windows/apps/winui/winui3/.
 public partial class App : Application
 {
-    // The .NET Generic Host provides dependency injection, configuration, logging, and other services.
-    // https://docs.microsoft.com/dotnet/core/extensions/generic-host
-    // https://docs.microsoft.com/dotnet/core/extensions/dependency-injection
-    // https://docs.microsoft.com/dotnet/core/extensions/configuration
-    // https://docs.microsoft.com/dotnet/core/extensions/logging
     public IHost Host { get; }
 
     public static T GetService<T>()
@@ -43,8 +35,6 @@ public partial class App : Application
                 // Default Activation Handler
                 services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
 
-                // Other Activation Handlers
-
                 // Services
                 services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
                 services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
@@ -58,13 +48,10 @@ public partial class App : Application
                 services.AddSingleton<IFileService, FileService>();
 
                 // Views and ViewModels
-                services.AddTransient<HistoryViewModel>();
                 services.AddTransient<HistoryPage>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SettingsPage>();
-                services.AddTransient<EncodeViewModel>();
                 services.AddTransient<EncodePage>();
-                services.AddTransient<DecodeViewModel>();
                 services.AddTransient<DecodePage>();
                 services.AddTransient<ShellPage>();
                 services.AddTransient<ShellViewModel>();

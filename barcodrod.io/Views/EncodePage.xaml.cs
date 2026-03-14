@@ -1,8 +1,9 @@
-﻿using barcodrod.io.ViewModels;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Navigation;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -24,7 +25,6 @@ public sealed partial class EncodePage : Page
     private Color lastBgColor;
     private string lastSavedlocation;
     private string lastEncodedType;
-    public EncodeViewModel ViewModel { get; }
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
@@ -35,6 +35,92 @@ public sealed partial class EncodePage : Page
     {
         InitializeComponent();
         writer.Options.NoPadding = true;
+        writer.Options.Hints.Add(EncodeHintType.CHARACTER_SET, "UTF-8");
+    }
+
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        await LoadEncodeSettings();
+    }
+
+    private async Task SaveEncodeSettings()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            JObject settings;
+            if (File.Exists(settingsFilePath))
+            {
+                var json = await File.ReadAllTextAsync(settingsFilePath);
+                settings = (json != null && json != "") ? JObject.Parse(json) : new JObject();
+            }
+            else
+            {
+                settings = new JObject();
+            }
+
+            settings["EncodeBarcode"] = BarcodeSelector.SelectedItem?.ToString() ?? "QR_CODE";
+            settings["EncodeWidth"] = userWidth.Text;
+            settings["EncodeHeight"] = userHeight.Text;
+            settings["EncodeMargin"] = userMargin.Text;
+            settings["EncodeCorrectionLevel"] = CorrectionLevel.SelectedIndex;
+
+            File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadEncodeSettings()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            if (!File.Exists(settingsFilePath)) return;
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrEmpty(json)) return;
+
+            var settings = JObject.Parse(json);
+
+            var barcodeType = settings["EncodeBarcode"]?.Value<string>();
+            if (!string.IsNullOrEmpty(barcodeType))
+            {
+                foreach (var item in BarcodeSelector.Items)
+                {
+                    if (item.ToString() == barcodeType)
+                    {
+                        BarcodeSelector.SelectedItem = item;
+                        break;
+                    }
+                }
+            }
+
+            var width = settings["EncodeWidth"]?.Value<string>();
+            if (!string.IsNullOrEmpty(width))
+                userWidth.Text = width;
+
+            var height = settings["EncodeHeight"]?.Value<string>();
+            if (!string.IsNullOrEmpty(height))
+                userHeight.Text = height;
+
+            var margin = settings["EncodeMargin"]?.Value<string>();
+            if (!string.IsNullOrEmpty(margin))
+                userMargin.Text = margin;
+
+            var correctionLevel = settings["EncodeCorrectionLevel"];
+            if (correctionLevel != null)
+                CorrectionLevel.SelectedIndex = correctionLevel.Value<int>();
+        }
+        catch
+        {
+        }
     }
 
     //function to copy the decoded bitmap to the user's clipboard as a pastable image
@@ -119,6 +205,8 @@ public sealed partial class EncodePage : Page
             try
             {
                 var barcode = writer.WriteAsBitmap(TxtActivityLog.Text);
+
+
                 BitmapToImageSource(barcode);
                 BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
                 BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
@@ -131,6 +219,7 @@ public sealed partial class EncodePage : Page
                 EncodeError.IsOpen = false;
                 lastEncodedType = format;
                 addToHistory(TxtActivityLog.Text, barcode);
+                _ = SaveEncodeSettings();
             }
             catch (Exception ex)
             {
@@ -296,40 +385,18 @@ public sealed partial class EncodePage : Page
         if (file != null)
         {
             var bitmap = lastEncoded;
-            //Convert BarcodeViewer.Source to bitmap
 
-            //Bitmap bitmap = writer.WriteAsBitmap(TxtActivityLog.Text);
+            int targetWidth = writer.Options.Width > 0 ? writer.Options.Width : bitmap.Width;
+            int targetHeight = writer.Options.Height > 0 ? writer.Options.Height : bitmap.Height;
 
-            bitmap.Save(file.Path, ImageFormat.Png);
-            //resize the bitmap to the currently selected user width and height withouth changing the aspect ratio
-
-            //get the ratio of the user's selected width and height
-            var ratio = (double)writer.Options.Width / (double)writer.Options.Height;
-            //get the ratio of the bitmap's width and height
-            var bitmapRatio = (double)bitmap.Width / (double)bitmap.Height;
-            //if the bitmap's ratio is greater than the user's ratio, then the bitmap's width is greater than the user's width
-            //so we need to resize the bitmap's width to the user's width and then resize the height to maintain the aspect ratio
-            if (bitmapRatio > ratio)
+            var resizedBitmap = new Bitmap(targetWidth, targetHeight);
+            using (var g = Graphics.FromImage(resizedBitmap))
             {
-                //resize the bitmap's width to the user's width
-                var resizedBitmap = new Bitmap(bitmap,
-                    new Size(writer.Options.Width, (int)(writer.Options.Width / bitmapRatio)));
-                resizedBitmap.Save(file.Path, ImageFormat.Png);
-                return;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+                g.DrawImage(bitmap, 0, 0, targetWidth, targetHeight);
             }
-            //if the bitmap's ratio is less than the user's ratio, then the bitmap's height is greater than the user's height
-            //so we need to resize the bitmap's height to the user's height and then resize the width to maintain the aspect ratio
-            else if (bitmapRatio < ratio)
-            {
-                //resize the bitmap's height to the user's height
-                var resizedBitmap = new Bitmap(bitmap,
-                    new Size((int)(writer.Options.Height * bitmapRatio), writer.Options.Height));
-                resizedBitmap.Save(file.Path, ImageFormat.Png);
-                return;
-            }
-
-            //Bitmap resizedBitmap = new Bitmap(bitmap, new System.Drawing.Size(writer.Options.Width, writer.Options.Height));
-            //resizedBitmap.Save(file.Path, ImageFormat.Png);
+            resizedBitmap.Save(file.Path, ImageFormat.Png);
         }
     }
 

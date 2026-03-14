@@ -1,6 +1,4 @@
 ﻿using barcodrod.io.Contracts.Services;
-using barcodrod.io.Contracts.ViewModels;
-using barcodrod.io.Helpers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using System.Diagnostics.CodeAnalysis;
@@ -66,13 +64,7 @@ public class NavigationService : INavigationService
     {
         if (CanGoBack)
         {
-            var vmBeforeNavigation = _frame.GetPageViewModel();
             _frame.GoBack();
-            if (vmBeforeNavigation is INavigationAware navigationAware)
-            {
-                navigationAware.OnNavigatedFrom();
-            }
-
             return true;
         }
 
@@ -86,15 +78,10 @@ public class NavigationService : INavigationService
         if (_frame != null && (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed))))
         {
             _frame.Tag = clearNavigation;
-            var vmBeforeNavigation = _frame.GetPageViewModel();
             var navigated = _frame.Navigate(pageType, parameter);
             if (navigated)
             {
                 _lastParameterUsed = parameter;
-                if (vmBeforeNavigation is INavigationAware navigationAware)
-                {
-                    navigationAware.OnNavigatedFrom();
-                }
             }
 
             return navigated;
@@ -111,11 +98,6 @@ public class NavigationService : INavigationService
             if (clearNavigation)
             {
                 frame.BackStack.Clear();
-            }
-
-            if (frame.GetPageViewModel() is INavigationAware navigationAware)
-            {
-                navigationAware.OnNavigatedTo(e.Parameter);
             }
 
             Navigated?.Invoke(sender, e);
