@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://www.microsoft.com/store/apps/9PHMXNX36SZZ"><img src="https://raw.githubusercontent.com/MarkHopper24/barcodrod.io/public/Assets/LockScreenLogo.scale-200.png" alt="barcodrod.io"></a><br>
+  <a href="https://www.microsoft.com/store/apps/9PHMXNX36SZZ"><img src="https://raw.githubusercontent.com/MarkHopper24/barcodrod.io/public/Assets/Square150x150Logo.scale-200.png" alt="barcodrod.io"></a><br>
   barcodrod.io
   
 </h1>
@@ -19,7 +19,7 @@
 ## Overview
 <a href="https://barcodrod.io">barcodrod.io</a> is a free, modern barcode and QR code toolkit for Windows. Decode 17 different barcode types using the Windows Snipping Tool, an image file, your clipboard, or webcam. Create 13 different types of barcodes from text. 
 
-barcodrod.io is built on the WinAppSDK, WinUI3, .NET 6, and the ZXing.Net library.
+barcodrod.io is built on the WinAppSDK, WinUI3, .NET 9, and the ZXing.Net library.
 
 <p align="center">
 <img src = https://github.com/MarkHopper24/barcodrod.io/blob/public/barcodrod.io.gif>
