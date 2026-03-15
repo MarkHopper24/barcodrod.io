@@ -112,7 +112,7 @@
                             <TextBox x:Name="EmailSubject" Margin="0,5,0,5" />
                             <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Message:" Margin="0,5,0,0" />
                             <RichEditBox x:Name="EmailBody" Margin="0,5,0,5" VerticalContentAlignment="Stretch"
-                                         VerticalAlignment="Stretch" TextWrapping="WrapWholeWords"
+                                         VerticalAlignment="Stretch" TextWrapping="Wrap"
                                          HorizontalTextAlignment="DetectFromContent" />
                             <Button x:Name="InsertEmail" HorizontalAlignment="Stretch" MaxWidth="250"
                                     Click="GenerateEmailQRCode" Margin="0,10,0,0">
@@ -268,7 +268,7 @@
                             </Button>
                             <TextBlock x:Name="SameColorWarning"
                                        Text="⚠️ Barcode and background colors must be different." Margin="0,5,0,0"
-                                       Visibility="Collapsed" TextWrapping="WrapWholeWords" TextAlignment="Center" />
+                                       Visibility="Collapsed" TextWrapping="Wrap" TextAlignment="Center" />
 
                         </StackPanel>
 

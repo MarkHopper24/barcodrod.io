@@ -1,6 +1,4 @@
 ﻿using barcodrod.io.Contracts.Services;
-using barcodrod.io.Core.Contracts.Services;
-using barcodrod.io.Core.Helpers;
 using barcodrod.io.Helpers;
 using barcodrod.io.Models;
 

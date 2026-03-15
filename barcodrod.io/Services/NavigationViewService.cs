@@ -1,6 +1,5 @@
 ﻿using barcodrod.io.Contracts.Services;
 using barcodrod.io.Helpers;
-using barcodrod.io.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using System.Diagnostics.CodeAnalysis;
 
@@ -57,7 +56,7 @@ public class NavigationViewService : INavigationViewService
     {
         if (args.IsSettingsInvoked)
         {
-            _navigationService.NavigateTo(typeof(SettingsViewModel).FullName!);
+            _navigationService.NavigateTo("barcodrod.io.ViewModels.SettingsViewModel");
         }
         else
         {

@@ -38,6 +38,14 @@ public sealed partial class ShellPage : Page
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.GoBack));
     }
 
+    private void PinButton_Click(object sender, TappedRoutedEventArgs e)
+    {
+        var window = App.MainWindow;
+        window.IsAlwaysOnTop = !window.IsAlwaysOnTop;
+        PinIcon.Glyph = window.IsAlwaysOnTop ? "\uE77A" : "\uE718";
+        ToolTipService.SetToolTip(PinNavItem, window.IsAlwaysOnTop ? "Unpin window" : "Pin window on top");
+    }
+
     private void OnClosed(object sender, RoutedEventArgs e)
     {
         Process.GetCurrentProcess().Close();

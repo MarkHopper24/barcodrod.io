@@ -78,6 +78,18 @@
                     </StackPanel>
                 </StackPanel>
 
+                <StackPanel Margin="20,10,0,20">
+                    <TextBlock Text="Decode: " />
+
+                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
+
+                        <CheckBox x:Name="AutoCopyToClipboard" FontSize="15" Content="Auto-copy to clipboard"
+                                  Margin="0,0,0,0" Checked="EnableAutoCopy" Unchecked="DisableAutoCopy"
+                                  ToolTipService.ToolTip="Automatically copy decoded text to the clipboard after a successful scan." />
+
+                    </StackPanel>
+                </StackPanel>
+
             </StackPanel>
 
 

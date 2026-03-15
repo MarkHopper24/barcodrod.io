@@ -1,8 +1,5 @@
 ﻿using barcodrod.io.Contracts.Services;
-using barcodrod.io.ViewModels;
 using barcodrod.io.Views;
-
-using CommunityToolkit.Mvvm.ComponentModel;
 
 using Microsoft.UI.Xaml.Controls;
 
@@ -14,10 +11,10 @@ public class PageService : IPageService
 
     public PageService()
     {
-        Configure<DecodeViewModel, DecodePage>();
-        Configure<EncodeViewModel, EncodePage>();
-        Configure<SettingsViewModel, SettingsPage>();
-        Configure<HistoryViewModel, HistoryPage>();
+        Configure<DecodePage>("barcodrod.io.ViewModels.DecodeViewModel");
+        Configure<EncodePage>("barcodrod.io.ViewModels.EncodeViewModel");
+        Configure<SettingsPage>("barcodrod.io.ViewModels.SettingsViewModel");
+        Configure<HistoryPage>("barcodrod.io.ViewModels.HistoryViewModel");
     }
 
     public Type GetPageType(string key)
@@ -34,13 +31,11 @@ public class PageService : IPageService
         return pageType;
     }
 
-    private void Configure<VM, V>()
-        where VM : ObservableObject
+    private void Configure<V>(string key)
         where V : Page
     {
         lock (_pages)
         {
-            var key = typeof(VM).FullName!;
             if (_pages.ContainsKey(key))
             {
                 throw new ArgumentException($"The key {key} is already configured in PageService");
