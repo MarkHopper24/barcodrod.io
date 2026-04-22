@@ -1,8 +1,7 @@
-﻿using AForge.Video;
-using AForge.Video.DirectShow;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Newtonsoft.Json;
@@ -13,8 +12,15 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Devices.Enumeration;
 using Windows.Foundation.Collections;
+using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
+using Windows.Media.Capture.Frames;
+using Windows.Media.Core;
+using Windows.Media.Devices;
+using Windows.Media.MediaProperties;
+using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
@@ -29,8 +35,13 @@ namespace barcodrod.io.Views;
 public partial class DecodePage : Page
 {
     private BarcodeReader? reader = new();
-    private FilterInfoCollection VideoCaptureDevices;
-    private VideoCaptureDevice? SelectedDSSource;
+    private DeviceInformationCollection? VideoCaptureDevices;
+    private MediaCapture? m_mediaCapture;
+    private MediaFrameSource? m_frameSource;
+    private MediaPlayer? m_mediaPlayer;
+    private MediaFrameReader? m_frameReader;
+    private bool m_isPreviewing;
+    private CancellationTokenSource? _scanningCancellation;
     private Bitmap? detectedCode;
     private string? lastSavedlocation;
     private string? lastSavedTextLocation;
@@ -43,43 +54,23 @@ public partial class DecodePage : Page
     private LauncherOptions? _launcherOptions;
     private StorageFile? currentLogPath;
     private StorageFolder? localFolder;
+    private bool _hasProcessedLaunchArgument;
+
+    private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".ico", ".dib", ".wmf", ".emf", ".exif", ".webp",
+        ".heif", ".jfif", ".jpe", ".jif", ".jfi", ".jp2", ".j2k", ".jpf", ".jpx", ".j2c", ".fpx", ".pcd", ".svg",
+        ".svgz", ".ai", ".eps", ".ps"
+    };
 
 
     public DecodePage()
     {
         InitializeComponent();
         InitializeLog();
-        VideoCaptureDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-        if (VideoCaptureDevices.Count > 0)
-        {
-            foreach (FilterInfo VideoCaptureDevice in VideoCaptureDevices) comboBox1.Items.Add(VideoCaptureDevice.Name);
+        LoadPasteToDecodeSetting();
 
-            if (SelectedDSSource != null)
-                for (var i = 0; i < SelectedDSSource.VideoCapabilities.Length; i++)
-                {
-                    var resolution_size = SelectedDSSource.VideoCapabilities[i].FrameSize.Width.ToString() + " x " +
-                                          SelectedDSSource.VideoCapabilities[i].FrameSize.Height.ToString();
-
-
-                    comboBox2.Items.Add(resolution_size);
-                }
-
-            comboBox2.SelectedIndex = 0;
-
-            //check if windows camera app is installed through uri scheme
-            var uri = new Uri("microsoft.windows.camera:");
-            var canLaunch = Launcher
-                .QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe").AsTask()
-                .Result;
-            if (canLaunch == LaunchQuerySupportStatus.Available) comboBox1.Items.Add("Windows Camera app");
-        }
-
-        if (comboBox1.Items.Count == 0)
-        {
-            DirectShowButton.IsEnabled = false;
-            comboBox1.Visibility = Visibility.Collapsed;
-            comboBox2.Visibility = Visibility.Collapsed;
-        }
+        _ = InitializeCameraDevicesAsync();
 
         reader.Options.TryHarder = true;
         reader.Options.TryInverted = true;
@@ -122,7 +113,7 @@ public partial class DecodePage : Page
             {
                 currentLogPath = await localFolder.GetFileAsync(logFileName);
                 Log("Decode page loaded.");
-                Log(VideoCaptureDevices.Count.ToString() + " capture devices found.");
+                Log((VideoCaptureDevices?.Count ?? 0).ToString() + " capture devices found.");
                 Log("BarcodeReader initialized.");
             }
 
@@ -147,6 +138,62 @@ public partial class DecodePage : Page
         catch
         {
             return;
+        }
+    }
+
+    private async Task InitializeCameraDevicesAsync()
+    {
+        try
+        {
+            VideoCaptureDevices = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector());
+
+            if (VideoCaptureDevices.Count > 0)
+            {
+                foreach (var device in VideoCaptureDevices)
+                    comboBox1.Items.Add(device.Name);
+
+                var uri = new Uri("microsoft.windows.camera:");
+                var canLaunch = await Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe");
+                if (canLaunch == LaunchQuerySupportStatus.Available)
+                    comboBox1.Items.Add("Windows Camera app");
+            }
+
+            if (comboBox1.Items.Count == 0)
+            {
+                DirectShowButton.IsEnabled = false;
+                comboBox1.Visibility = Visibility.Collapsed;
+                comboBox2.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("Error initializing camera devices: " + ex.Message);
+            DirectShowButton.IsEnabled = false;
+            comboBox1.Visibility = Visibility.Collapsed;
+            comboBox2.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private async void LoadPasteToDecodeSetting()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            if (!File.Exists(settingsFilePath)) return;
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrEmpty(json)) return;
+
+            var settings = JObject.Parse(json);
+            var pasteToDecode = settings["PasteToDecode"];
+            if (pasteToDecode != null && pasteToDecode.Value<bool>())
+                PasteAccelerator.IsEnabled = true;
+        }
+        catch
+        {
+            // Setting not found or invalid; leave accelerator disabled.
         }
     }
 
@@ -258,6 +305,7 @@ public partial class DecodePage : Page
 
             DidDecodeSucceed(0);
             _ = AutoCopyIfEnabled(result);
+            _ = AutoLaunchUrlIfEnabled(result);
 
             if (IsWifiCode(result))
                 ClearTagsButton.Visibility = Visibility.Visible;
@@ -294,6 +342,35 @@ public partial class DecodePage : Page
         catch (Exception ex)
         {
             Log("Error auto-copying to clipboard: " + ex.Message);
+        }
+    }
+
+    private async Task AutoLaunchUrlIfEnabled(string text)
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            if (!File.Exists(settingsFilePath)) return;
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrEmpty(json)) return;
+
+            var settings = JObject.Parse(json);
+            var autoOpen = settings["AutoOpenUrl"];
+            if (autoOpen == null || !autoOpen.Value<bool>()) return;
+
+            if (!TryNormalizeUri(text, out var uri)) return;
+
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return;
+
+            Log("Auto-launching URL in default browser: " + uri.AbsoluteUri);
+            await Launcher.LaunchUriAsync(uri);
+        }
+        catch (Exception ex)
+        {
+            Log("Error auto-launching URL: " + ex.Message);
         }
     }
 
@@ -340,6 +417,42 @@ public partial class DecodePage : Page
     {
         base.OnNavigatedTo(e);
         await LoadWebcamSettings();
+
+        if (_hasProcessedLaunchArgument)
+            return;
+
+        _hasProcessedLaunchArgument = true;
+
+        if (e.Parameter is string launchArgument)
+        {
+            if (TryExtractLaunchImagePath(launchArgument, out var imagePath))
+            {
+                DecodeFromFile(imagePath);
+            }
+        }
+    }
+
+    private bool TryExtractLaunchImagePath(string argument, out string imagePath)
+    {
+        imagePath = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(argument))
+            return false;
+
+        var trimmedArgument = argument.Trim();
+
+        if (trimmedArgument.StartsWith('"') && trimmedArgument.EndsWith('"') && trimmedArgument.Length > 1)
+            trimmedArgument = trimmedArgument[1..^1];
+
+        if (!File.Exists(trimmedArgument))
+            return false;
+
+        var extension = Path.GetExtension(trimmedArgument);
+        if (string.IsNullOrWhiteSpace(extension) || !SupportedImageExtensions.Contains(extension))
+            return false;
+
+        imagePath = trimmedArgument;
+        return true;
     }
 
     private async Task SaveWebcamSettings()
@@ -395,104 +508,411 @@ public partial class DecodePage : Page
         }
     }
 
-    private void DirectShowSourceChanged(object sender, RoutedEventArgs e)
+    private async void DirectShowSourceChanged(object sender, RoutedEventArgs e)
     {
         if (comboBox1.SelectedItem != null) DirectShowButton.IsEnabled = true;
 
-        killVideoFeed();
+        await StopCameraPreviewAsync();
 
-        if (comboBox1.Items.Count > 0)
+        if (comboBox1.Items.Count > 0 && comboBox1.SelectedItem != null)
         {
             if (comboBox1.SelectedItem.ToString() == "Windows Camera app")
             {
                 comboBox2.Visibility = Visibility.Collapsed;
-                DirectShowButton.Tapped -= InitializeDirectShowCam;
+                DirectShowButton.Tapped -= InitializeMediaCaptureCam;
                 DirectShowButton.Tapped += CustomCameraCaptureUI;
             }
-
-            if (comboBox1.SelectedItem.ToString() != "Windows Camera app")
+            else
             {
                 comboBox2.Visibility = Visibility.Visible;
-
                 DirectShowButton.Tapped -= CustomCameraCaptureUI;
-                DirectShowButton.Tapped += InitializeDirectShowCam;
-                //killVideoFeed();
-                SelectedDSSource = new VideoCaptureDevice(VideoCaptureDevices[comboBox1.SelectedIndex].MonikerString);
+                DirectShowButton.Tapped += InitializeMediaCaptureCam;
+
+                // Populate resolutions for selected camera
+                await PopulateCameraResolutionsAsync();
             }
 
-            Log("DirectShow source changed to " + comboBox1.SelectedItem.ToString());
-        }
-
-
-        if (SelectedDSSource != null)
-        {
-            comboBox2.Items.Clear();
-            for (var i = 0; i < SelectedDSSource.VideoCapabilities.Length; i++)
-            {
-                var resolution_size = SelectedDSSource.VideoCapabilities[i].FrameSize.Width.ToString() + " x " +
-                                      SelectedDSSource.VideoCapabilities[i].FrameSize.Height.ToString();
-                comboBox2.Items.Add(resolution_size);
-                comboBox2.SelectedIndex = 0;
-            }
+            Log("Camera source changed to " + comboBox1.SelectedItem.ToString());
         }
 
         _ = SaveWebcamSettings();
     }
 
-    private void killVideoFeed()
+    private async Task PopulateCameraResolutionsAsync()
     {
-        Log("Killing DirectShow feed.");
-        if (SelectedDSSource == null)
-        {
-            DirectShowButtonTextBlock.Text = "Webcam";
-            return;
-        }
+        comboBox2.Items.Clear();
 
-        SelectedDSSource.SignalToStop();
-        //SelectedDSSource.Stop();
-        SelectedDSSource.NewFrame -= new NewFrameEventHandler(SelectedDSSource_NewFrame);
-        SelectedDSSource = null;
-        DirectShowButtonTextBlock.Text = "Webcam";
-        BarcodeViewer.ClearValue(Image.SourceProperty);
+        try
+        {
+            if (comboBox1.SelectedIndex < 0 || VideoCaptureDevices == null || comboBox1.SelectedIndex >= VideoCaptureDevices.Count)
+                return;
+
+            var selectedDevice = VideoCaptureDevices[comboBox1.SelectedIndex];
+            var tempCapture = new MediaCapture();
+
+            await tempCapture.InitializeAsync(new MediaCaptureInitializationSettings
+            {
+                VideoDeviceId = selectedDevice.Id,
+                StreamingCaptureMode = StreamingCaptureMode.Video
+            });
+
+            var frameSource = tempCapture.FrameSources.FirstOrDefault(source =>
+                source.Value.Info.MediaStreamType == MediaStreamType.VideoPreview &&
+                source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
+
+            if (frameSource == null)
+            {
+                frameSource = tempCapture.FrameSources.FirstOrDefault(source =>
+                    source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
+                    source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
+            }
+
+            if (frameSource != null)
+            {
+                var addedResolutions = new HashSet<string>();
+                foreach (var format in frameSource.SupportedFormats
+                    .OrderByDescending(f => f.VideoFormat.Width * f.VideoFormat.Height))
+                {
+                    var resolution = $"{format.VideoFormat.Width} x {format.VideoFormat.Height}";
+                    if (addedResolutions.Add(resolution))
+                        comboBox2.Items.Add(resolution);
+                }
+
+                if (comboBox2.Items.Count > 0)
+                    comboBox2.SelectedIndex = 0;
+            }
+
+            tempCapture.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Log("Error populating resolutions: " + ex.Message);
+        }
+    }
+
+    private async Task StopCameraPreviewAsync()
+    {
+        if (Interlocked.CompareExchange(ref _isStopping, 1, 0) != 0)
+            return;
+
+        Log("Stopping camera preview.");
+
+        try
+        {
+            // Set early so FrameReader_FrameArrived exits immediately on any in-flight callbacks
+            m_isPreviewing = false;
+            _scanningCancellation?.Cancel();
+            _scanningCancellation = null;
+
+            if (m_frameReader != null)
+            {
+                // Unsubscribe before StopAsync so no new callbacks fire during teardown
+                m_frameReader.FrameArrived -= FrameReader_FrameArrived;
+                await m_frameReader.StopAsync();
+                m_frameReader.Dispose();
+                m_frameReader = null;
+            }
+
+            if (m_mediaPlayer != null)
+            {
+                // Detach from the MediaPlayerElement BEFORE disposing,
+                // otherwise the element crashes trying to render a disposed player
+                CameraPreview.SetMediaPlayer(null);
+                m_mediaPlayer.Pause();
+                m_mediaPlayer.Dispose();
+                m_mediaPlayer = null;
+            }
+
+            if (m_mediaCapture != null)
+            {
+                m_mediaCapture.Dispose();
+                m_mediaCapture = null;
+            }
+
+            m_frameSource = null;
+
+            CameraPreview.Visibility = Visibility.Collapsed;
+            BarcodeViewer.Visibility = Visibility.Visible;
+            DirectShowButtonTextBlock.Text = "Webcam";
+            BarcodeViewer.ClearValue(Image.SourceProperty);
+        }
+        catch (Exception ex)
+        {
+            Log("Error stopping camera: " + ex.Message);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _isStopping, 0);
+        }
     }
 
     private async void StopVideoFeed(object sender, RoutedEventArgs e)
     {
-        killVideoFeed();
-        DirectShowButtonTextBlock.Text = "Webcam";
+        await StopCameraPreviewAsync();
     }
 
-    public async void InitializeDirectShowCam(object sender, RoutedEventArgs e)
+    public async void InitializeMediaCaptureCam(object sender, RoutedEventArgs e)
     {
-        if (SelectedDSSource == null)
-            SelectedDSSource = new VideoCaptureDevice(VideoCaptureDevices[comboBox1.SelectedIndex].MonikerString);
-
-        if (SelectedDSSource.IsRunning == true)
+        if (m_isPreviewing)
         {
-            BarcodeViewer.ClearValue(Image.SourceProperty);
-
-            killVideoFeed();
+            await StopCameraPreviewAsync();
             return;
         }
 
-        frameCount = 0;
-        detectedCode = null;
+        try
+        {
+            frameCount = 0;
+            detectedCode = null;
+            _scanningCancellation = new CancellationTokenSource();
 
-        SelectedDSSource.Source = VideoCaptureDevices[comboBox1.SelectedIndex].MonikerString;
-        SelectedDSSource.VideoResolution = SelectedDSSource.VideoCapabilities[comboBox2.SelectedIndex];
+            if (comboBox1.SelectedIndex < 0 || VideoCaptureDevices == null || comboBox1.SelectedIndex >= VideoCaptureDevices.Count)
+            {
+                Log("Invalid camera selection");
+                return;
+            }
 
+            var selectedDevice = VideoCaptureDevices[comboBox1.SelectedIndex];
 
-        //BarcodeViewer.MaxHeight = SelectedDSSource.VideoCapabilities[comboBox2.SelectedIndex].FrameSize.Height;
-        //BarcodeViewer.MaxWidth = SelectedDSSource.VideoCapabilities[comboBox2.SelectedIndex].FrameSize.Width;
-        SelectedDSSource.NewFrame += new NewFrameEventHandler(SelectedDSSource_NewFrame);
+            m_mediaCapture = new MediaCapture();
+            var settings = new MediaCaptureInitializationSettings
+            {
+                VideoDeviceId = selectedDevice.Id,
+                StreamingCaptureMode = StreamingCaptureMode.Video,
+                MemoryPreference = MediaCaptureMemoryPreference.Cpu,
+                SharingMode = MediaCaptureSharingMode.ExclusiveControl
+            };
 
-        SelectedDSSource.Start();
-        if (SelectedDSSource.IsRunning == true) DirectShowButtonTextBlock.Text = "Stop Video";
+            await m_mediaCapture.InitializeAsync(settings);
+            Log("MediaCapture initialized successfully");
 
-        //wait for a barcode to be detected
+            // Find a color video frame source (prefer preview, fall back to record)
+            m_frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source =>
+                source.Value.Info.MediaStreamType == MediaStreamType.VideoPreview &&
+                source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
 
+            if (m_frameSource == null)
+            {
+                m_frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source =>
+                    source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
+                    source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
+            }
 
-        while (detectedCode == null) await Task.Delay(1000);
+            if (m_frameSource == null)
+            {
+                Log("No suitable frame source found");
+                await StopCameraPreviewAsync();
+                return;
+            }
+
+            // Set resolution if specified
+            if (comboBox2.SelectedIndex >= 0 && comboBox2.SelectedItem != null)
+                await SetCameraResolutionAsync();
+
+            // Create MediaPlayer for preview display
+            m_mediaPlayer = new MediaPlayer
+            {
+                RealTimePlayback = true,
+                AutoPlay = false,
+                Source = MediaSource.CreateFromMediaFrameSource(m_frameSource)
+            };
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                CameraPreview.SetMediaPlayer(m_mediaPlayer);
+                CameraPreview.Visibility = Visibility.Visible;
+                BarcodeViewer.Visibility = Visibility.Collapsed;
+                DirectShowButtonTextBlock.Text = "Stop Video";
+            });
+
+            m_mediaPlayer.Play();
+            m_isPreviewing = true;
+
+            // Create frame reader for barcode scanning
+            m_frameReader = await m_mediaCapture.CreateFrameReaderAsync(m_frameSource);
+            m_frameReader.FrameArrived += FrameReader_FrameArrived;
+            await m_frameReader.StartAsync();
+
+            Log("Camera preview started");
+        }
+        catch (Exception ex)
+        {
+            Log("Error initializing camera: " + ex.Message);
+            await StopCameraPreviewAsync();
+        }
+    }
+
+    private async Task SetCameraResolutionAsync()
+    {
+        try
+        {
+            if (m_frameSource == null || comboBox2.SelectedItem == null)
+                return;
+
+            var resolutionString = comboBox2.SelectedItem.ToString();
+            if (resolutionString == null)
+                return;
+
+            var parts = resolutionString.Split('x');
+            if (parts.Length != 2)
+                return;
+
+            if (!uint.TryParse(parts[0].Trim(), out var width) || !uint.TryParse(parts[1].Trim(), out var height))
+                return;
+
+            var targetFormat = m_frameSource.SupportedFormats.FirstOrDefault(format =>
+                format.VideoFormat.Width == width &&
+                format.VideoFormat.Height == height);
+
+            if (targetFormat != null)
+            {
+                await m_frameSource.SetFormatAsync(targetFormat);
+                Log($"Set resolution to {width}x{height}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("Error setting resolution: " + ex.Message);
+        }
+    }
+
+    private int _isProcessingFrame; // 0 = idle, 1 = busy (interlocked guard)
+    private int _isStopping; // 0 = idle, 1 = stopping (interlocked guard)
+
+    private void FrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
+    {
+        if (!m_isPreviewing || detectedCode != null || _scanningCancellation?.IsCancellationRequested == true)
+            return;
+
+        frameCount++;
+
+        // Process every 10th frame to reduce CPU usage (same cadence as original)
+        if (frameCount % 10 != 0)
+            return;
+
+        // Prevent re-entrant processing — skip if a previous frame is still being decoded
+        if (Interlocked.CompareExchange(ref _isProcessingFrame, 1, 0) != 0)
+            return;
+
+        try
+        {
+            using var frame = sender.TryAcquireLatestFrame();
+            if (frame?.VideoMediaFrame == null)
+                return;
+
+            SoftwareBitmap? softwareBitmap = null;
+            bool ownsSoftwareBitmap = false;
+            try
+            {
+                softwareBitmap = frame.VideoMediaFrame.SoftwareBitmap;
+                if (softwareBitmap == null)
+                {
+                    if (frame.VideoMediaFrame.Direct3DSurface != null)
+                    {
+                        softwareBitmap = SoftwareBitmap.CreateCopyFromSurfaceAsync(
+                            frame.VideoMediaFrame.Direct3DSurface).AsTask().GetAwaiter().GetResult();
+                        ownsSoftwareBitmap = true;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Bgra8 ||
+                    softwareBitmap.BitmapAlphaMode != BitmapAlphaMode.Premultiplied)
+                {
+                    var converted = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
+                    if (ownsSoftwareBitmap) softwareBitmap.Dispose();
+                    softwareBitmap = converted;
+                    ownsSoftwareBitmap = true;
+                }
+
+                var bitmap = ConvertSoftwareBitmapToBitmap(softwareBitmap);
+
+                if (bitmap != null && SilentDecodeBitmap(bitmap))
+                {
+                    detectedCode = bitmap;
+                    if (_isStopping == 0)
+                    {
+                        DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            await StopCameraPreviewAsync();
+                            ProcessDetectedBarcode();
+                        });
+                    }
+                    else
+                    {
+                        bitmap.Dispose();
+                        detectedCode = null;
+                    }
+                }
+                else
+                {
+                    bitmap?.Dispose();
+                }
+            }
+            finally
+            {
+                if (ownsSoftwareBitmap) softwareBitmap?.Dispose();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Frame reader or media capture was disposed while processing; this is expected during shutdown.
+        }
+        catch (Exception ex)
+        {
+            Log("Error processing frame: " + ex.Message);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _isProcessingFrame, 0);
+        }
+    }
+
+    private Bitmap? ConvertSoftwareBitmapToBitmap(SoftwareBitmap softwareBitmap)
+    {
+        try
+        {
+            int width = softwareBitmap.PixelWidth;
+            int height = softwareBitmap.PixelHeight;
+
+            var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            var bitmapData = bitmap.LockBits(
+                new Rectangle(0, 0, width, height),
+                ImageLockMode.WriteOnly,
+                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            try
+            {
+                // Copy pixel data from SoftwareBitmap directly into the GDI+ Bitmap buffer
+                byte[] pixelBuffer = new byte[4 * width * height];
+                softwareBitmap.CopyToBuffer(pixelBuffer.AsBuffer());
+
+                // Copy row by row to handle stride differences between SoftwareBitmap and GDI+
+                for (int y = 0; y < height; y++)
+                {
+                    Marshal.Copy(pixelBuffer, y * width * 4, bitmapData.Scan0 + y * bitmapData.Stride, width * 4);
+                }
+            }
+            finally
+            {
+                bitmap.UnlockBits(bitmapData);
+            }
+
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            Log("Error converting bitmap: " + ex.Message);
+            return null;
+        }
+    }
+
+    private async void ProcessDetectedBarcode()
+    {
+        if (detectedCode == null)
+            return;
 
         var result = DecodeBitmap(detectedCode);
         if (result != null)
@@ -501,58 +921,72 @@ public partial class DecodePage : Page
             TxtActivityLog.Text = result;
             BitmapToImageSource(detectedCode);
             DirectShowButtonTextBlock.Text = "Webcam";
+            var isUri = await IsResultURI();
+            if (isUri) OpenTextWithButton.IsEnabled = true;
         }
     }
 
-    private void SelectedDSSource_NewFrame(object sender, NewFrameEventArgs frameEventArgs)
+    private bool TryNormalizeUri(string input, out Uri uri)
     {
-        frameCount++;
-        using (var video = (Bitmap)frameEventArgs.Frame.Clone())
+        uri = null;
+
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
+
+        input = input.Trim();
+
+        // Already a valid absolute URI
+        if (Uri.TryCreate(input, UriKind.Absolute, out var temp) &&
+            (temp.Scheme == Uri.UriSchemeHttp || temp.Scheme == Uri.UriSchemeHttps))
         {
-            var memory = new MemoryStream();
-            video.Save(memory, ImageFormat.Bmp);
-            memory.Position = 0;
-            if (frameCount % 10 == 0)
-                if (SilentDecodeBitmap(video) == true)
-                {
-                    detectedCode = (Bitmap)video.Clone();
-                    DispatcherQueue.TryEnqueue(() => { killVideoFeed(); });
-                    return;
-                }
-
-            if (DispatcherQueue == null)
-            {
-                killVideoFeed();
-                return;
-            }
-
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                var _ = new BitmapImage();
-                _.SetSource(memory.AsRandomAccessStream());
-                BarcodeViewer.SetValue(Image.SourceProperty, _);
-            });
+            uri = temp;
+            return true;
         }
+
+        // Add https:// if it looks like a URL (starts with "www." or contains a dot)
+        if (input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            input.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            // Already has scheme but TryCreate above failed, so it's malformed
+            return false;
+        }
+
+        if (input.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ||
+            (input.Contains('.') && !input.Contains(' ')))
+        {
+            if (Uri.TryCreate("https://" + input, UriKind.Absolute, out temp))
+            {
+                uri = temp;
+                return true;
+            }
+        }
+
+        // Try the original text as-is for custom URI schemes (e.g., "tel:", "mailto:")
+        if (Uri.TryCreate(input, UriKind.Absolute, out temp))
+        {
+            uri = temp;
+            return true;
+        }
+
+        return false;
     }
 
     private async Task<bool> IsResultURI()
     {
-        Uri uri;
         try
         {
-            uri = new Uri(TxtActivityLog.Text);
-            var success = await Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri);
-            //var success = await Launcher.Launch­Uri­Async(uri);
-            if (success != 0)
-            {
+            if (!TryNormalizeUri(TxtActivityLog.Text, out var uri))
                 return false;
-            }
-            else
+
+            var status = await Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri);
+
+            if (status == LaunchQuerySupportStatus.Available)
             {
                 Log("Result is a URI and at least 1 supporting app has been found.");
-
                 return true;
             }
+
+            return false;
         }
         catch (Exception ex)
         {
@@ -696,7 +1130,7 @@ public partial class DecodePage : Page
         BarcodeScroller.Visibility = Visibility.Collapsed;
         //WebcamButton.Text = "Windows Camera";
 
-        if (SelectedDSSource != null) killVideoFeed();
+        if (m_isPreviewing) await StopCameraPreviewAsync();
 
         if (lastDecoded != null) lastDecoded.Dispose();
 
@@ -826,7 +1260,7 @@ public partial class DecodePage : Page
     {
         //StorageFile file;
         //file = await StorageFile.GetFileFromPathAsync(filepath);
-        var file = StorageFile.GetFileFromPathAsync(filepath).GetAwaiter().GetResult();
+        var file = await StorageFile.GetFileFromPathAsync(filepath);
         //check if file is 0 bytes in size
         var fileProperties = await file.GetBasicPropertiesAsync();
         if (fileProperties.Size == 0)
@@ -842,11 +1276,10 @@ public partial class DecodePage : Page
             DidDecodeSucceed(0);
             TxtActivityLog.Text = result;
 
-            result.GetType().ToString();
             BitmapToImageSource(bitmap);
 
-            var Uri = await IsResultURI();
-            if (Uri == true) OpenTextWithButton.IsEnabled = true;
+            var isUri = await IsResultURI();
+            if (isUri) OpenTextWithButton.IsEnabled = true;
         }
         else
         {
@@ -883,6 +1316,12 @@ public partial class DecodePage : Page
                 BarcodeViewer.Source = null;
             }
         }
+    }
+
+    private void PasteKeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+    {
+        DecodeFromClipboard(this, new RoutedEventArgs());
+        args.Handled = true;
     }
 
     public async void CustomCameraCaptureUI(object sender, RoutedEventArgs e)
@@ -1193,16 +1632,14 @@ public partial class DecodePage : Page
         {
             var options = new LauncherOptions();
             options.DisplayApplicationPicker = true;
-            if (await IsResultURI() == false)
+            if (await IsResultURI() == false || !TryNormalizeUri(TxtActivityLog.Text, out var launchUri))
             {
                 DidDecodeSucceed(6);
                 OpenTextWithButton.IsEnabled = false;
                 return;
             }
 
-            var uri = new Uri(TxtActivityLog.Text);
-
-            await Launcher.LaunchUriAsync(uri, options);
+            await Launcher.LaunchUriAsync(launchUri, options);
         }
         else
         {

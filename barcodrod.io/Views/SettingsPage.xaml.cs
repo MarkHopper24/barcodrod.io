@@ -1,4 +1,5 @@
-﻿using barcodrod.io.ViewModels;
+﻿using barcodrod.io.Helpers;
+using barcodrod.io.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -78,9 +79,10 @@ public sealed partial class SettingsPage : Page
             var historyEnabled = true;
             var backdropIndex = 0;
             var autoCopyToClipboard = false;
-            var currentBackdrop = App.MainWindow.SystemBackdrop;
-
-
+            var autoOpenUrl = false;
+            var pasteToDecode = false;
+            var autoEncodeOnPaste = false;
+            var defaultLaunchPage = "barcodrod.io.ViewModels.DecodeViewModel";
             //if settings.json doesn't exist, create it with barcodrod.io defaults
             if (File.Exists(settingsFilePath) == false)
             {
@@ -90,7 +92,9 @@ public sealed partial class SettingsPage : Page
                 {
                     HistoryEnabled = historyEnabled,
                     BackdropIndex = backdropIndex,
-                    AutoCopyToClipboard = autoCopyToClipboard
+                    AutoCopyToClipboard = autoCopyToClipboard,
+                    AutoEncodeOnPaste = autoEncodeOnPaste,
+                    DefaultLaunchPage = defaultLaunchPage
                 };
 
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -110,38 +114,18 @@ public sealed partial class SettingsPage : Page
                         backdropIndex = loadedData.BackdropIndex;
                         if (loadedData.AutoCopyToClipboard != null)
                             autoCopyToClipboard = loadedData.AutoCopyToClipboard;
+                        if (loadedData.AutoOpenUrl != null)
+                            autoOpenUrl = loadedData.AutoOpenUrl;
+                        if (loadedData.PasteToDecode != null)
+                            pasteToDecode = loadedData.PasteToDecode;
+                        if (loadedData.AutoEncodeOnPaste != null)
+                            autoEncodeOnPaste = loadedData.AutoEncodeOnPaste;
+                        if (loadedData.DefaultLaunchPage != null)
+                            defaultLaunchPage = loadedData.DefaultLaunchPage;
 
                         if (Backdrops.SelectedIndex != backdropIndex)
                         {
-                            if (IsMicaSupported() == true)
-                                if (backdropIndex == 0)
-                                {
-                                    //check if it's a MicaKind.BaseAlt
-                                    if (((MicaBackdrop)currentBackdrop).Kind !=
-                                        Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt)
-                                    {
-                                        var backdrop = new MicaBackdrop();
-                                        backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt;
-                                        App.MainWindow.SystemBackdrop = backdrop;
-                                    }
-                                    //check if it's a MicaKind.BaseAlt
-                                    else if (backdropIndex == 1)
-                                    {
-                                        if (((MicaBackdrop)currentBackdrop).Kind !=
-                                            Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base)
-                                        {
-                                            var backdrop = new MicaBackdrop();
-                                            backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base;
-                                            App.MainWindow.SystemBackdrop = backdrop;
-                                        }
-                                    }
-                                }
-
-                            if (backdropIndex == 2)
-                            {
-                                var backdrop = new DesktopAcrylicBackdrop();
-                                App.MainWindow.SystemBackdrop = backdrop;
-                            }
+                            ApplyBackdropByIndex(backdropIndex);
                         }
                     }
                 }
@@ -151,6 +135,15 @@ public sealed partial class SettingsPage : Page
             HistoryEnabled.IsChecked = historyEnabled;
             Backdrops.SelectedIndex = backdropIndex;
             AutoCopyToClipboard.IsChecked = autoCopyToClipboard;
+            AutoOpenUrl.IsChecked = autoOpenUrl;
+            PasteToDecode.IsChecked = pasteToDecode;
+            AutoEncodeOnPaste.IsChecked = autoEncodeOnPaste;
+            DefaultLaunchPageSelector.SelectedIndex = defaultLaunchPage switch
+            {
+                "barcodrod.io.ViewModels.EncodeViewModel" => 1,
+                "barcodrod.io.ViewModels.HistoryViewModel" => 2,
+                _ => 0
+            };
 
         }
         catch
@@ -163,7 +156,9 @@ public sealed partial class SettingsPage : Page
             var data = new
             {
                 HistoryEnabled = true,
-                BackdropIndex = 0
+                BackdropIndex = 0,
+                AutoEncodeOnPaste = false,
+                DefaultLaunchPage = "barcodrod.io.ViewModels.DecodeViewModel"
             };
 
             var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -258,68 +253,51 @@ public sealed partial class SettingsPage : Page
         settings["BackdropIndex"] = backdropIndex;
         var output = JsonConvert.SerializeObject(settings, Formatting.Indented);
         File.WriteAllText(settingsFilePath, output);
-        var currentBackdrop = App.MainWindow.SystemBackdrop;
+        ApplyBackdropByIndex(backdropIndex);
+    }
 
+    private void ApplyBackdropByIndex(int backdropIndex)
+    {
         if (backdropIndex == 0)
         {
-            //get MainWindow's SystemBackrop and check if it's a MicaBackdrop
-            if (currentBackdrop is MicaBackdrop)
-            {
-                //check if it's a MicaKind.BaseAlt
-                if (((MicaBackdrop)currentBackdrop).Kind == Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt)
-                {
-                    return;
-                }
-                else
-                {
-                    var backdrop = new MicaBackdrop();
-                    backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt;
-                    App.MainWindow.SystemBackdrop = backdrop;
-                }
-            }
-            else
-            {
-                var backdrop = new MicaBackdrop();
-                backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt;
-                App.MainWindow.SystemBackdrop = backdrop;
-            }
-        }
-
-        else if (backdropIndex == 1)
-        {
-            if (currentBackdrop is MicaBackdrop)
-            {
-                //check if it's a MicaKind.BaseAlt
-                if (((MicaBackdrop)currentBackdrop).Kind == Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base)
-                {
-                    return;
-                }
-                else
-                {
-                    var backdrop = new MicaBackdrop();
-                    backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base;
-                    App.MainWindow.SystemBackdrop = backdrop;
-                }
-            }
-            else
-            {
-                var backdrop = new MicaBackdrop();
-                backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base;
-                App.MainWindow.SystemBackdrop = backdrop;
-            }
-        }
-
-        else if (backdropIndex == 2)
-        {
-            if (currentBackdrop is DesktopAcrylicBackdrop)
-            {
+            var currentBackdrop = App.MainWindow.SystemBackdrop as MicaBackdrop;
+            if (currentBackdrop != null && currentBackdrop.Kind == Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt)
                 return;
-            }
-            else
-            {
-                var backdrop = new DesktopAcrylicBackdrop();
-                App.MainWindow.SystemBackdrop = backdrop;
-            }
+
+            var backdrop = new MicaBackdrop();
+            backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt;
+            App.MainWindow.SystemBackdrop = backdrop;
+            return;
+        }
+
+        if (backdropIndex == 1)
+        {
+            var currentBackdrop = App.MainWindow.SystemBackdrop as MicaBackdrop;
+            if (currentBackdrop != null && currentBackdrop.Kind == Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base)
+                return;
+
+            var backdrop = new MicaBackdrop();
+            backdrop.Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.Base;
+            App.MainWindow.SystemBackdrop = backdrop;
+            return;
+        }
+
+        if (backdropIndex == 2)
+        {
+            if (App.MainWindow.SystemBackdrop is DesktopAcrylicBackdrop)
+                return;
+
+            var backdrop = new DesktopAcrylicBackdrop();
+            App.MainWindow.SystemBackdrop = backdrop;
+            return;
+        }
+
+        if (backdropIndex == 3)
+        {
+            if (App.MainWindow.SystemBackdrop is AcrylicAltBackdrop)
+                return;
+
+            App.MainWindow.SystemBackdrop = new AcrylicAltBackdrop();
         }
     }
 
@@ -344,6 +322,98 @@ public sealed partial class SettingsPage : Page
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
         var settings = JObject.Parse(jsonSettings);
         settings["AutoCopyToClipboard"] = false;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void EnableAutoOpenUrl(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["AutoOpenUrl"] = true;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void DisableAutoOpenUrl(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["AutoOpenUrl"] = false;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void EnablePasteToDecode(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["PasteToDecode"] = true;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void DisablePasteToDecode(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["PasteToDecode"] = false;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void EnableAutoEncodeOnPaste(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["AutoEncodeOnPaste"] = true;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void DisableAutoEncodeOnPaste(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+        settings["AutoEncodeOnPaste"] = false;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private async void UpdateDefaultLaunchPage(object sender, SelectionChangedEventArgs e)
+    {
+        if (!SettingsLoaded) return;
+
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+        var settings = JObject.Parse(jsonSettings);
+
+        settings["DefaultLaunchPage"] = DefaultLaunchPageSelector.SelectedIndex switch
+        {
+            1 => "barcodrod.io.ViewModels.EncodeViewModel",
+            2 => "barcodrod.io.ViewModels.HistoryViewModel",
+            _ => "barcodrod.io.ViewModels.DecodeViewModel"
+        };
+
         File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
@@ -13,9 +14,13 @@ namespace barcodrod.io.Views;
 
 public sealed partial class HistoryPage : Page
 {
+    private bool _isGalleryView;
+    private bool _isInitializingHistoryViewToggle;
+
     public HistoryPage()
     {
         InitializeComponent();
+        SetHistoryLayout();
         RefreshCounters();
         HistoryList.SelectionChanged += (s, e) => { RefreshCounters(); };
     }
@@ -316,6 +321,12 @@ public sealed partial class HistoryPage : Page
 
     private async void LoadHistory(object sender, RoutedEventArgs e)
     {
+        await LoadHistoryViewSettingAsync();
+
+        HistoryList.Items.Clear();
+        SetHistoryLayout();
+        RefreshCounters();
+
         var isHistoryEnabled = await IsHistoryEnabled();
         if (isHistoryEnabled == false)
         {
@@ -384,11 +395,22 @@ public sealed partial class HistoryPage : Page
                         {
                             RefreshCounters();
 
+                            var textContent = await FileIO.ReadTextAsync(textFile);
+
                             var grid = new Grid();
-                            grid.ColumnDefinitions.Add(new ColumnDefinition());
-                            grid.ColumnDefinitions.Add(new ColumnDefinition());
-                            grid.ColumnDefinitions[0].Width = new GridLength(200);
-                            grid.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+                            if (_isGalleryView)
+                            {
+                                grid.ColumnDefinitions.Add(new ColumnDefinition());
+                                grid.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+                            }
+                            else
+                            {
+                                grid.ColumnDefinitions.Add(new ColumnDefinition());
+                                grid.ColumnDefinitions.Add(new ColumnDefinition());
+                                grid.ColumnDefinitions[0].Width = new GridLength(200);
+                                grid.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+                            }
+
                             var stackPanel = new StackPanel();
                             stackPanel.Orientation = Orientation.Vertical;
 
@@ -397,6 +419,7 @@ public sealed partial class HistoryPage : Page
                             pathTextBlock.FontSize = 12;
                             pathTextBlock.VerticalAlignment = VerticalAlignment.Top;
                             pathTextBlock.Margin = new Thickness(0, 10, 0, 0);
+                            pathTextBlock.Visibility = _isGalleryView ? Visibility.Collapsed : Visibility.Visible;
                             stackPanel.Children.Add(pathTextBlock);
 
 
@@ -405,8 +428,8 @@ public sealed partial class HistoryPage : Page
                             await bitmapimage.SetSourceAsync(await imageFile.OpenAsync(FileAccessMode.Read));
                             image.Source = bitmapimage;
                             image.VerticalAlignment = VerticalAlignment.Center;
-                            image.Width = 150;
-                            image.Height = 150;
+                            image.Width = _isGalleryView ? 220 : 150;
+                            image.Height = _isGalleryView ? 220 : 150;
                             image.Margin = new Thickness(0, 10, 0, 10);
 
                             var ImageRightClickCommandBar = ImageRightClickMenuBar;
@@ -463,28 +486,48 @@ public sealed partial class HistoryPage : Page
                             stackPanel.HorizontalAlignment = HorizontalAlignment.Center;
                             stackPanel.VerticalAlignment = VerticalAlignment.Center;
 
+                            if (_isGalleryView)
+                            {
+                                var fileNameText = new TextBlock();
+                                fileNameText.Text = imageFileName;
+                                fileNameText.FontSize = 12;
+                                fileNameText.TextWrapping = TextWrapping.WrapWholeWords;
+                                fileNameText.MaxLines = 2;
+                                fileNameText.Margin = new Thickness(0, 0, 0, 6);
+                                stackPanel.Children.Add(fileNameText);
+
+                                var textPreview = new TextBlock();
+                                textPreview.Text = textContent;
+                                textPreview.TextWrapping = TextWrapping.WrapWholeWords;
+                                textPreview.MaxLines = 4;
+                                textPreview.Opacity = .85;
+                                textPreview.Margin = new Thickness(0, 0, 0, 6);
+                                stackPanel.Children.Add(textPreview);
+                            }
 
                             grid.Children.Add(stackPanel);
                             Grid.SetColumn(stackPanel, 0);
 
+                            if (!_isGalleryView)
+                            {
+                                var textBox = new TextBox();
+                                textBox.TextWrapping = TextWrapping.Wrap;
 
-                            var textBox = new TextBox();
-                            textBox.TextWrapping = TextWrapping.Wrap;
+                                textBox.Text = textContent;
+                                textBox.Margin = new Thickness(0, 10, 0, 10);
+                                textBox.Background = new SolidColorBrush(Colors.Transparent);
 
-
-                            textBox.Text = await FileIO.ReadTextAsync(textFile);
-                            textBox.Margin = new Thickness(0, 10, 0, 10);
-                            textBox.Background = new SolidColorBrush(Colors.Transparent);
-
-                            grid.Children.Add(textBox);
-                            Grid.SetColumn(textBox, 1);
-                            Grid.SetRow(textBox, 0);
-                            Grid.SetRowSpan(textBox, 2);
-                            textBox.IsReadOnly = true;
+                                grid.Children.Add(textBox);
+                                Grid.SetColumn(textBox, 1);
+                                Grid.SetRow(textBox, 0);
+                                Grid.SetRowSpan(textBox, 2);
+                                textBox.IsReadOnly = true;
+                            }
 
 
                             var listViewItem = new ListViewItem();
-                            listViewItem.Margin = new Thickness(0, 0, 10, 0);
+                            listViewItem.Margin = _isGalleryView ? new Thickness(0, 0, 10, 10) : new Thickness(0, 0, 10, 0);
+                            listViewItem.Width = _isGalleryView ? 280 : double.NaN;
 
 
                             listViewItem.Content = grid;
@@ -500,6 +543,29 @@ public sealed partial class HistoryPage : Page
                     }
                 }
             }
+        }
+    }
+
+    private async void ToggleHistoryView(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializingHistoryViewToggle)
+            return;
+
+        _isGalleryView = GalleryViewToggle.IsOn;
+        await SaveHistoryViewSettingAsync();
+        SetHistoryLayout();
+        LoadHistory(sender, e);
+    }
+
+    private void SetHistoryLayout()
+    {
+        var panelTemplate = _isGalleryView
+            ? Resources["HistoryGalleryItemsPanelTemplate"] as ItemsPanelTemplate
+            : Resources["HistoryListItemsPanelTemplate"] as ItemsPanelTemplate;
+
+        if (panelTemplate != null)
+        {
+            HistoryList.ItemsPanel = panelTemplate;
         }
     }
 
@@ -531,6 +597,72 @@ public sealed partial class HistoryPage : Page
         catch
         {
             return true;
+        }
+    }
+
+    private async Task LoadHistoryViewSettingAsync()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+            if (!File.Exists(settingsFilePath))
+            {
+                _isGalleryView = false;
+            }
+            else
+            {
+                var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+                if (!string.IsNullOrWhiteSpace(jsonSettings))
+                {
+                    var settings = JObject.Parse(jsonSettings);
+                    var historyGalleryView = settings["HistoryGalleryView"];
+                    _isGalleryView = historyGalleryView != null && historyGalleryView.Value<bool>();
+                }
+                else
+                {
+                    _isGalleryView = false;
+                }
+            }
+
+            _isInitializingHistoryViewToggle = true;
+            GalleryViewToggle.IsOn = _isGalleryView;
+            _isInitializingHistoryViewToggle = false;
+        }
+        catch
+        {
+            _isGalleryView = false;
+            _isInitializingHistoryViewToggle = true;
+            GalleryViewToggle.IsOn = false;
+            _isInitializingHistoryViewToggle = false;
+        }
+    }
+
+    private async Task SaveHistoryViewSettingAsync()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            JObject settings;
+            if (File.Exists(settingsFilePath))
+            {
+                var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+                settings = !string.IsNullOrWhiteSpace(jsonSettings)
+                    ? JObject.Parse(jsonSettings)
+                    : new JObject();
+            }
+            else
+            {
+                settings = new JObject();
+            }
+
+            settings["HistoryGalleryView"] = _isGalleryView;
+            File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+        }
+        catch
+        {
         }
     }
 }

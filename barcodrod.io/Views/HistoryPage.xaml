@@ -8,6 +8,12 @@
     Loaded="LoadHistory"
     UseLayoutRounding="True">
     <Page.Resources>
+        <ItemsPanelTemplate x:Key="HistoryListItemsPanelTemplate">
+            <ItemsStackPanel Orientation="Vertical" />
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="HistoryGalleryItemsPanelTemplate">
+            <ItemsWrapGrid Orientation="Horizontal" />
+        </ItemsPanelTemplate>
         <MenuFlyout x:Name="ImageRightClickMenuBar">
             <MenuFlyoutItem x:Name="CopyImageMenuButton" Text="Copy" Icon="Copy" ToolTipService.ToolTip="Copy Image" />
             <MenuFlyoutItem x:Name="OpenImageMenuButton" Text="Open" Icon="OpenWith"
@@ -54,6 +60,11 @@
 
             </DropDownButton>
 
+            <ToggleSwitch x:Name="GalleryViewToggle"
+                          Header="Gallery view"
+                          Toggled="ToggleHistoryView"
+                          Margin="0,0,0,10" />
+
             <Button x:Name="DeleteFromHistoryButton"
                     ToolTipService.ToolTip="Delete the selected items from your history" VerticalAlignment="Bottom"
                     HorizontalAlignment="Stretch" Margin="0,0,0,5" Tapped="DeleteFromHistory" Height="Auto">
@@ -68,7 +79,8 @@
             <TextBlock x:Name="HistoryCountTextBlock" FontWeight="SemiBold" Text="0" HorizontalAlignment="Stretch"
                        Margin="0,0,0,5" Height="Auto" />
         </StackPanel>
-        <ListView x:Name="HistoryList" Grid.Row="0" Grid.Column="1" Margin="0,8,10,10" SelectionMode="Multiple" />
+        <ListView x:Name="HistoryList" Grid.Row="0" Grid.Column="1" Margin="0,8,10,10" SelectionMode="Multiple"
+                  ItemsPanel="{StaticResource HistoryListItemsPanelTemplate}" />
 
     </Grid>
 

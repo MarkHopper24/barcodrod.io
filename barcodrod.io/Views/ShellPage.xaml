@@ -62,7 +62,7 @@
                         <FontIcon x:Name="PinIcon" Glyph="&#xE718;" />
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.Content>
-                        <TextBlock Text="Pin" />
+                        <TextBlock x:Name="PinText" Text="Pin" />
                     </NavigationViewItem.Content>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>

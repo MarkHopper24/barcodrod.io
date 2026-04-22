@@ -6,7 +6,11 @@ using barcodrod.io.ViewModels;
 using barcodrod.io.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.UI.Xaml;
+using System.Linq;
+using Windows.ApplicationModel.Activation;
+using Windows.Storage;
 
 namespace barcodrod.io;
 
@@ -33,7 +37,8 @@ public partial class App : Application
             .ConfigureServices((context, services) =>
             {
                 // Default Activation Handler
-                services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
+                services.AddTransient<ActivationHandler<Microsoft.UI.Xaml.LaunchActivatedEventArgs>, DefaultActivationHandler>();
+                services.AddTransient<IActivationHandler, FilePathActivationHandler>();
 
                 // Services
                 services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
@@ -72,9 +77,20 @@ public partial class App : Application
         e.Handled = true;
     }
 
-    protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+
+        var activatedArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+        if (activatedArgs.Kind == ExtendedActivationKind.File && activatedArgs.Data is IFileActivatedEventArgs fileActivatedArgs)
+        {
+            var filePath = fileActivatedArgs.Files?.OfType<StorageFile>().FirstOrDefault()?.Path;
+            if (!string.IsNullOrWhiteSpace(filePath))
+            {
+                await GetService<IActivationService>().ActivateAsync(filePath);
+                return;
+            }
+        }
 
         await GetService<IActivationService>().ActivateAsync(args);
     }

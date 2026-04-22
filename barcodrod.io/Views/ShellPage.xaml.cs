@@ -43,6 +43,7 @@ public sealed partial class ShellPage : Page
         var window = App.MainWindow;
         window.IsAlwaysOnTop = !window.IsAlwaysOnTop;
         PinIcon.Glyph = window.IsAlwaysOnTop ? "\uE77A" : "\uE718";
+        PinText.Text = window.IsAlwaysOnTop ? "Unpin" : "Pin";
         ToolTipService.SetToolTip(PinNavItem, window.IsAlwaysOnTop ? "Unpin window" : "Pin window on top");
     }
 
