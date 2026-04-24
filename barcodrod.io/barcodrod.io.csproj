@@ -11,17 +11,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWinUI>true</UseWinUI>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <EnableMsixTooling>true</EnableMsixTooling>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
-    <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
-    <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
+    <UapAppxPackageBuildMode>SideloadOnly</UapAppxPackageBuildMode>
+    <BuildAppxUploadPackageForUap>false</BuildAppxUploadPackageForUap>
+    <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
     <UserSecretsId>b509cab9-7bac-4a2a-b212-4c9b770155a3</UserSecretsId>
-    <AppxPackageDir>D:\barcodrod.io legacy release\</AppxPackageDir>
+    <AppxPackageDir>D:\barcodrod.io_builds\</AppxPackageDir>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <ApplicationIcon>Assets\WindowIcon.ico</ApplicationIcon>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
