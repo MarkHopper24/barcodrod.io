@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -7,12 +7,12 @@
   xmlns:genTemplate="http://schemas.microsoft.com/appx/developer/templatestudio"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
-  IgnorableNamespaces="uap rescap genTemplate">
+  IgnorableNamespaces="uap rescap genTemplate com desktop">
 
   <Identity
     Name="53383MarkHopper.570136E6C1E54"
     Publisher="CN=ADA72B16-B88A-4477-94E0-44F1442A4EAE"
-    Version="1.9.0.0" />
+    Version="2.0.0.0" />
 
   <Properties>
     <DisplayName>barcodrod.io</DisplayName>
@@ -47,7 +47,27 @@
         <uap:LockScreen Notification="badgeAndTileText" BadgeLogo="Assets\BadgeLogo.png"/>
         <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="transparent"/>
       </uap:VisualElements>
-      <Extensions>
+            <Extensions>
+          <uap:Extension Category="windows.fileTypeAssociation">
+              <uap:FileTypeAssociation Name="image">
+                  <uap:SupportedFileTypes>
+                      <uap:FileType>.jpg</uap:FileType>
+                      <uap:FileType>.jpeg</uap:FileType>
+                      <uap:FileType>.png</uap:FileType>
+                      <uap:FileType>.bmp</uap:FileType>
+                      <uap:FileType>.gif</uap:FileType>
+                      <uap:FileType>.tif</uap:FileType>
+                      <uap:FileType>.tiff</uap:FileType>
+                      <uap:FileType>.webp</uap:FileType>
+                      <uap:FileType>.heif</uap:FileType>
+                      <uap:FileType>.heic</uap:FileType>
+                      <uap:FileType>.jfif</uap:FileType>
+                      <uap:FileType>.ico</uap:FileType>
+                      <uap:FileType>.svg</uap:FileType>
+                      <uap:FileType>.jp2</uap:FileType>
+                  </uap:SupportedFileTypes>
+              </uap:FileTypeAssociation>
+          </uap:Extension>
           <desktop:Extension Category="windows.toastNotificationActivation">
               <desktop:ToastNotificationActivation ToastActivatorCLSID="DD6D181A-17B6-4A3A-9E66-B9399E0F1184" />
           </desktop:Extension>

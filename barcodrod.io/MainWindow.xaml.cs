@@ -97,6 +97,13 @@ public sealed partial class MainWindow : WindowEx
                             var backdrop = new DesktopAcrylicBackdrop();
                             App.MainWindow.SystemBackdrop = backdrop;
                         }
+
+                        if (backdropIndex == 3)
+                        {
+                            Log("Setting backdrop to Acrylic Alt");
+                            var backdrop = new AcrylicAltBackdrop();
+                            App.MainWindow.SystemBackdrop = backdrop;
+                        }
                     }
                 }
             }

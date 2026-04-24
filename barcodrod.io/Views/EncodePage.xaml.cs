@@ -9,7 +9,9 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using Windows.System;
 using ZXing;
 using ZXing.QrCode.Internal;
 using ZXing.Windows.Compatibility;
@@ -20,11 +22,15 @@ namespace barcodrod.io.Views;
 public sealed partial class EncodePage : Page
 {
     private readonly BarcodeWriter writer = new();
+    private readonly BarcodeReader logoVerifyReader = new();
     public Bitmap lastEncoded;
     private Color lastColor;
     private Color lastBgColor;
     private string lastSavedlocation;
     private string lastEncodedType;
+    private Bitmap? _logoBitmap;
+    private string? _bulkEncodeOutputPath;
+    private bool _autoEncodeOnPaste;
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
@@ -34,14 +40,34 @@ public sealed partial class EncodePage : Page
     public EncodePage()
     {
         InitializeComponent();
+        Loaded += EncodePage_Loaded;
         writer.Options.NoPadding = true;
         writer.Options.Hints.Add(EncodeHintType.CHARACTER_SET, "UTF-8");
+        logoVerifyReader.Options.TryHarder = true;
+        logoVerifyReader.Options.PossibleFormats = new[] { BarcodeFormat.QR_CODE };
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         await LoadEncodeSettings();
+        await FocusEncodeInputAsync();
+    }
+
+    private async void EncodePage_Loaded(object sender, RoutedEventArgs e)
+    {
+        await FocusEncodeInputAsync();
+    }
+
+    private async Task FocusEncodeInputAsync()
+    {
+        await Task.Delay(20);
+
+        if (TxtActivityLog.Focus(FocusState.Programmatic))
+            return;
+
+        await Task.Delay(80);
+        TxtActivityLog.Focus(FocusState.Programmatic);
     }
 
     private async Task SaveEncodeSettings()
@@ -117,10 +143,21 @@ public sealed partial class EncodePage : Page
             var correctionLevel = settings["EncodeCorrectionLevel"];
             if (correctionLevel != null)
                 CorrectionLevel.SelectedIndex = correctionLevel.Value<int>();
+
+            var autoEncodeOnPaste = settings["AutoEncodeOnPaste"];
+            _autoEncodeOnPaste = autoEncodeOnPaste != null && autoEncodeOnPaste.Value<bool>();
         }
         catch
         {
         }
+    }
+
+    private void TxtActivityLog_Paste(object sender, TextControlPasteEventArgs e)
+    {
+        if (!_autoEncodeOnPaste)
+            return;
+
+        DispatcherQueue.TryEnqueue(() => { CreateBarcode(this, new RoutedEventArgs()); });
     }
 
     //function to copy the decoded bitmap to the user's clipboard as a pastable image
@@ -204,8 +241,19 @@ public sealed partial class EncodePage : Page
         if (TxtActivityLog.Text != null && TxtActivityLog.Text != "")
             try
             {
+                if (_logoBitmap != null && writer.Format == BarcodeFormat.QR_CODE)
+                {
+                    if (writer.Options.Hints.ContainsKey(EncodeHintType.ERROR_CORRECTION))
+                        writer.Options.Hints.Remove(EncodeHintType.ERROR_CORRECTION);
+                    writer.Options.Hints.Add(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+                }
+
                 var barcode = writer.WriteAsBitmap(TxtActivityLog.Text);
 
+                if (_logoBitmap != null && writer.Format == BarcodeFormat.QR_CODE)
+                {
+                    barcode = OverlayLogoWithVerification(barcode, _logoBitmap, TxtActivityLog.Text);
+                }
 
                 BitmapToImageSource(barcode);
                 BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
@@ -214,6 +262,7 @@ public sealed partial class EncodePage : Page
                 SaveImageButton.IsEnabled = true;
                 CopyImageButton.IsEnabled = true;
                 ChangeBarcodeColorButton.IsEnabled = true;
+                LogoOverlayButton.IsEnabled = writer.Format == BarcodeFormat.QR_CODE;
                 EncodeError.Message = "";
                 EncodeError.Title = "";
                 EncodeError.IsOpen = false;
@@ -233,6 +282,7 @@ public sealed partial class EncodePage : Page
                 SaveImageButton.IsEnabled = false;
                 CopyImageButton.IsEnabled = false;
                 ChangeBarcodeColorButton.IsEnabled = false;
+                LogoOverlayButton.IsEnabled = false;
             }
     }
 
@@ -546,5 +596,448 @@ public sealed partial class EncodePage : Page
 
             return;
         }
+    }
+
+    private async void SelectLogo(object sender, RoutedEventArgs e)
+    {
+        var window = new Window();
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var picker = new FileOpenPicker();
+        picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+        picker.FileTypeFilter.Add(".png");
+        picker.FileTypeFilter.Add(".jpg");
+        picker.FileTypeFilter.Add(".jpeg");
+        picker.FileTypeFilter.Add(".bmp");
+        picker.FileTypeFilter.Add(".gif");
+        picker.FileTypeFilter.Add(".ico");
+
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        var file = await picker.PickSingleFileAsync();
+
+        if (file != null)
+        {
+            _logoBitmap?.Dispose();
+            _logoBitmap = new Bitmap(file.Path);
+            RemoveLogoButton.IsEnabled = true;
+            LogoStatusText.Text = $"✓ {file.Name}";
+            LogoStatusText.Visibility = Visibility.Visible;
+
+            if (lastEncoded != null && lastEncodedType == "QR_CODE")
+            {
+                CreateBarcode(sender, e);
+            }
+        }
+    }
+
+    private void RemoveLogo(object sender, RoutedEventArgs e)
+    {
+        _logoBitmap?.Dispose();
+        _logoBitmap = null;
+        RemoveLogoButton.IsEnabled = false;
+        LogoStatusText.Visibility = Visibility.Collapsed;
+
+        if (lastEncoded != null && lastEncodedType == "QR_CODE")
+        {
+            CreateBarcode(sender, e);
+        }
+    }
+
+    private Bitmap OverlayLogoWithVerification(Bitmap qrBitmap, Bitmap logo, string expectedText)
+    {
+        var maxLogoPercent = 0.20;
+        var minLogoPercent = 0.05;
+        var step = 0.02;
+
+        for (var percent = maxLogoPercent; percent >= minLogoPercent; percent -= step)
+        {
+            var result = OverlayLogo(qrBitmap, logo, percent);
+            var decoded = logoVerifyReader.Decode(result);
+            if (decoded != null && decoded.Text == expectedText)
+            {
+                return result;
+            }
+            result.Dispose();
+        }
+
+        EncodeError.Message = "Logo is too large to overlay while keeping the QR code scannable. The QR code was generated without the logo.";
+        EncodeError.Title = "Logo Overlay";
+        EncodeError.Severity = InfoBarSeverity.Warning;
+        EncodeError.IsOpen = true;
+        return new Bitmap(qrBitmap);
+    }
+
+    private Bitmap OverlayLogo(Bitmap qrBitmap, Bitmap logo, double sizePercent)
+    {
+        var result = new Bitmap(qrBitmap);
+        var logoWidth = (int)(result.Width * sizePercent);
+        var logoHeight = (int)(result.Height * sizePercent);
+
+        if (logo.Width > logo.Height)
+        {
+            logoHeight = (int)(logoWidth * ((double)logo.Height / logo.Width));
+        }
+        else if (logo.Height > logo.Width)
+        {
+            logoWidth = (int)(logoHeight * ((double)logo.Width / logo.Height));
+        }
+
+        var x = (result.Width - logoWidth) / 2;
+        var y = (result.Height - logoHeight) / 2;
+
+        using (var g = Graphics.FromImage(result))
+        {
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+            var padding = Math.Max(2, logoWidth / 15);
+            using (var bgBrush = new SolidBrush(Color.White))
+            {
+                g.FillRectangle(bgBrush, x - padding, y - padding,
+                    logoWidth + padding * 2, logoHeight + padding * 2);
+            }
+
+            g.DrawImage(logo, x, y, logoWidth, logoHeight);
+        }
+
+        return result;
+    }
+
+    private async void BulkEncode(object sender, RoutedEventArgs e)
+    {
+        if (BulkEncodeTip.IsOpen)
+        {
+            KillBulkEncode();
+            return;
+        }
+
+        // Pick CSV file
+        var window = new Window();
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var csvPicker = new FileOpenPicker();
+        csvPicker.FileTypeFilter.Add(".csv");
+        WinRT.Interop.InitializeWithWindow.Initialize(csvPicker, hwnd);
+        var csvFile = await csvPicker.PickSingleFileAsync();
+
+        if (csvFile == null) return;
+
+        // Pick output folder
+        var folderPicker = new FolderPicker();
+        folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+        folderPicker.FileTypeFilter.Add("*");
+        WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+        var outputFolder = await folderPicker.PickSingleFolderAsync();
+
+        if (outputFolder == null) return;
+
+        _bulkEncodeOutputPath = outputFolder.Path;
+
+        // Read and parse CSV
+        var lines = await File.ReadAllLinesAsync(csvFile.Path);
+        if (lines.Length < 2)
+        {
+            EncodeError.Title = "Error";
+            EncodeError.Message = "CSV file must have a header row and at least one data row.";
+            EncodeError.Severity = InfoBarSeverity.Error;
+            EncodeError.IsOpen = true;
+            return;
+        }
+
+        // Determine column indices from header
+        if (!TryParseCsvLine(lines[0], out var header))
+        {
+            EncodeError.Title = "Error";
+            EncodeError.Message = "The selected CSV is not in a valid format. Please make sure quoted values are properly closed.";
+            EncodeError.Severity = InfoBarSeverity.Error;
+            EncodeError.IsOpen = true;
+            return;
+        }
+
+        var textCol = -1;
+        var typeCol = -1;
+        for (var i = 0; i < header.Length; i++)
+        {
+            var col = header[i].Trim().ToLowerInvariant();
+            if (col == "text" || col == "content" || col == "data" || col == "value")
+                textCol = i;
+            else if (col == "type" || col == "barcodetype" || col == "barcode type" || col == "format")
+                typeCol = i;
+        }
+
+        if (textCol == -1)
+        {
+            EncodeError.Title = "Error";
+            EncodeError.Message = "CSV must contain a 'Text' column. Optionally include a 'Type' column (e.g., QR_CODE, CODE_128).";
+            EncodeError.Severity = InfoBarSeverity.Error;
+            EncodeError.IsOpen = true;
+            return;
+        }
+
+        var rawDataLines = lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToArray();
+        var parsedDataLines = new List<string[]>();
+
+        foreach (var rawLine in rawDataLines)
+        {
+            if (!TryParseCsvLine(rawLine, out var parsedLine) || parsedLine.Length != header.Length)
+            {
+                EncodeError.Title = "Error";
+                EncodeError.Message = "The selected CSV is not in the proper format. Ensure each row has the same number of columns as the header and valid quoted values.";
+                EncodeError.Severity = InfoBarSeverity.Error;
+                EncodeError.IsOpen = true;
+                return;
+            }
+
+            parsedDataLines.Add(parsedLine);
+        }
+
+        var totalCount = parsedDataLines.Count;
+        if (totalCount == 0)
+        {
+            EncodeError.Title = "Error";
+            EncodeError.Message = "No data rows found in the CSV file.";
+            EncodeError.Severity = InfoBarSeverity.Error;
+            EncodeError.IsOpen = true;
+            return;
+        }
+
+        // Setup progress UI
+        BulkEncodeButton.IsEnabled = false;
+        BulkEncodeTip.Title = "Encoding...";
+        BulkEncodeProgress.Minimum = 0;
+        BulkEncodeProgress.Maximum = totalCount;
+        BulkEncodeProgress.Value = 0;
+        BulkEncodeProgress.IsActive = true;
+        BulkEncodeTotalFiles.Text = "";
+        BulkEncodeFailedStat.Text = "";
+        BulkEncodeFailedStat.Visibility = Visibility.Collapsed;
+        OpenBulkEncodeOutputButton.IsEnabled = false;
+        BulkEncodeTip.IsOpen = true;
+
+        var encodedCount = 0;
+        var failedCount = 0;
+
+        // Determine default format from current selection
+        var defaultFormat = BarcodeSelector.SelectedItem?.ToString() ?? "QR_CODE";
+
+        // Parse current dimension settings
+        int.TryParse(userWidth.Text, out var encodeWidth);
+        if (encodeWidth <= 0) encodeWidth = 800;
+        int.TryParse(userHeight.Text, out var encodeHeight);
+        if (encodeHeight <= 0) encodeHeight = 800;
+        int.TryParse(userMargin.Text, out var encodeMargin);
+
+        foreach (var cols in parsedDataLines)
+        {
+            if (!BulkEncodeTip.IsOpen)
+            {
+                KillBulkEncode();
+                return;
+            }
+
+            if (textCol >= cols.Length || string.IsNullOrWhiteSpace(cols[textCol]))
+            {
+                failedCount++;
+                BulkEncodeProgress.Value = encodedCount + failedCount;
+                continue;
+            }
+
+            var text = cols[textCol].Trim();
+            var formatStr = (typeCol >= 0 && typeCol < cols.Length && !string.IsNullOrWhiteSpace(cols[typeCol]))
+                ? cols[typeCol].Trim()
+                : defaultFormat;
+
+            try
+            {
+                var bulkWriter = new BarcodeWriter();
+                bulkWriter.Options.NoPadding = true;
+                bulkWriter.Options.Hints.Add(EncodeHintType.CHARACTER_SET, "UTF-8");
+                bulkWriter.Format = (BarcodeFormat)Enum.Parse(typeof(BarcodeFormat), formatStr, true);
+                bulkWriter.Options.Width = encodeWidth;
+                bulkWriter.Options.Height = encodeHeight;
+                bulkWriter.Options.Margin = encodeMargin;
+                bulkWriter.Options.PureBarcode = true;
+
+                var barcode = bulkWriter.WriteAsBitmap(text);
+
+                var safeFileName = string.Join("_", text.Split(Path.GetInvalidFileNameChars()));
+                if (safeFileName.Length > 80) safeFileName = safeFileName.Substring(0, 80);
+                var fileName = $"{encodedCount + 1}.{formatStr}.{safeFileName}.png";
+                var filePath = Path.Combine(outputFolder.Path, fileName);
+
+                barcode.Save(filePath, ImageFormat.Png);
+                barcode.Dispose();
+                encodedCount++;
+            }
+            catch
+            {
+                failedCount++;
+            }
+
+            BulkEncodeProgress.Value = encodedCount + failedCount;
+            BulkEncodeTotalFiles.Text = encodedCount + "/" + totalCount + " encoded 🤠";
+
+            if (failedCount > 0)
+            {
+                BulkEncodeFailedStat.Text = "Failed to encode " + failedCount + " row(s).";
+                BulkEncodeFailedStat.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BulkEncodeFailedStat.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        BulkEncodeTip.Title = "Complete";
+        OpenBulkEncodeOutputButton.IsEnabled = true;
+        BulkEncodeButton.IsEnabled = true;
+    }
+
+    private static string[] ParseCsvLine(string line)
+    {
+        var fields = new List<string>();
+        var current = "";
+        var inQuotes = false;
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            var c = line[i];
+            if (inQuotes)
+            {
+                if (c == '"')
+                {
+                    if (i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current += '"';
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = false;
+                    }
+                }
+                else
+                {
+                    current += c;
+                }
+            }
+            else
+            {
+                if (c == '"')
+                {
+                    inQuotes = true;
+                }
+                else if (c == ',')
+                {
+                    fields.Add(current);
+                    current = "";
+                }
+                else
+                {
+                    current += c;
+                }
+            }
+        }
+
+        fields.Add(current);
+        return fields.ToArray();
+    }
+
+    private static bool TryParseCsvLine(string line, out string[] fields)
+    {
+        fields = ParseCsvLine(line);
+
+        var quoteCount = 0;
+        for (var i = 0; i < line.Length; i++)
+        {
+            if (line[i] != '"') continue;
+
+            if (i + 1 < line.Length && line[i + 1] == '"')
+            {
+                i++;
+                continue;
+            }
+
+            quoteCount++;
+        }
+
+        return quoteCount % 2 == 0;
+    }
+
+    private void KillBulkEncode()
+    {
+        BulkEncodeProgress.Value = 0;
+        BulkEncodeProgress.IsActive = false;
+        BulkEncodeTotalFiles.Text = "";
+        BulkEncodeFailedStat.Text = "";
+        BulkEncodeFailedStat.Visibility = Visibility.Collapsed;
+        OpenBulkEncodeOutputButton.IsEnabled = false;
+        BulkEncodeButton.IsEnabled = true;
+    }
+
+    private async void OpenBulkEncodeOutput(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_bulkEncodeOutputPath) && Directory.Exists(_bulkEncodeOutputPath))
+        {
+            var folder = await StorageFolder.GetFolderFromPathAsync(_bulkEncodeOutputPath);
+            await Launcher.LaunchFolderAsync(folder);
+        }
+    }
+
+    private async void ShowBulkEncodeInfo(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Bulk Encode – CSV Format",
+            CloseButtonText = "OK",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = this.XamlRoot,
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Your CSV file should have a header row with at least a Text column. " +
+                               "An optional Type column lets you specify the barcode format per row.",
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Text = "Accepted column names",
+                        Style = (Style)Application.Current.Resources["BaseTextBlockStyle"]
+                    },
+                    new TextBlock
+                    {
+                        Text = "• Text column: Text, Content, Data, or Value\n" +
+                               "• Type column (optional): Type, BarcodeType, Barcode Type, or Format",
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Text = "Example CSV",
+                        Style = (Style)Application.Current.Resources["BaseTextBlockStyle"]
+                    },
+                    new TextBlock
+                    {
+                        Text = "Text,Type\n" +
+                               "https://github.com,QR_CODE\n" +
+                               "1234567890128,EAN_13\n" +
+                               "Hello World,CODE_128",
+                        FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true,
+                        Padding = new Thickness(10),
+                    },
+                    new TextBlock
+                    {
+                        Text = "If no Type column is provided, the currently selected barcode format will be used for all rows.",
+                        TextWrapping = TextWrapping.Wrap,
+                        Opacity = 0.7
+                    }
+                }
+            }
+        };
+
+        await dialog.ShowAsync();
     }
 }

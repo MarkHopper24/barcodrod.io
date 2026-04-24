@@ -8,6 +8,10 @@
     Unloaded="ClearState"
     x:Name="dPage">
 
+    <Page.KeyboardAccelerators>
+        <KeyboardAccelerator x:Name="PasteAccelerator" Key="V" Modifiers="Control" Invoked="PasteKeyboardAccelerator_Invoked" IsEnabled="False" />
+    </Page.KeyboardAccelerators>
+
     <Grid x:Name="PageGrid">
 
         <Grid.ColumnDefinitions>
@@ -33,27 +37,26 @@
             </TeachingTip.CloseButtonContent>
 
             <TeachingTip.Content>
-                <StackPanel>
-                    <ProgressRing x:Name="progressRing" IsActive="False" IsIndeterminate="False" Margin="0,0,0,5"
+                <StackPanel Margin="0,10,0,0">
+                    <ProgressRing x:Name="progressRing" IsActive="False" IsIndeterminate="False" Margin="0,0,0,15"
                                   Height="115" Width="115" />
-                    <TextBlock x:Name="TotalFiles" Margin="0,0,0,5" HorizontalAlignment="Center"
+                    <TextBlock x:Name="TotalFiles" Margin="0,0,0,25" HorizontalAlignment="Center"
                                Style="{ThemeResource BaseTextBlockStyle}" FontSize="20" />
                     <TextBlock x:Name="FailedDecodeProgressStat" Margin="0,0,0,20" HorizontalAlignment="Center"
                                TextAlignment="Center" TextWrapping="WrapWholeWords" Visibility="Collapsed" />
-                    <Button x:Name="SaveCsv" HorizontalAlignment="Stretch" Click="SaveCSV" Margin="0">
+                    <Button x:Name="SaveCsv" HorizontalAlignment="Stretch" Click="SaveCSV" Margin="0,0,0,5">
                         <StackPanel Orientation="Horizontal" Height="Auto" HorizontalAlignment="Stretch">
                             <SymbolIcon Symbol="Save" VerticalAlignment="Stretch" />
                             <TextBlock x:Name="SaveCsvTextBlock" Text="Save .CSV File" Margin="5,0,0,0"
                                        IsColorFontEnabled="True" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="OpenCsv" HorizontalAlignment="Stretch" Click="OpenCSV" Margin="0,10,0,0">
+                    <Button x:Name="OpenCsv" HorizontalAlignment="Stretch" Click="OpenCSV" Margin="0,0,0,5">
                         <StackPanel Orientation="Horizontal" Height="Auto" HorizontalAlignment="Stretch">
                             <SymbolIcon Symbol="OpenWith" VerticalAlignment="Stretch" />
                             <TextBlock Text="Open .CSV File" Margin="5,0,0,0" IsColorFontEnabled="True" />
                         </StackPanel>
                     </Button>
-
                 </StackPanel>
             </TeachingTip.Content>
 
@@ -94,7 +97,7 @@
                         HorizontalContentAlignment="Center" Margin="0,0,0,5" Height="Auto" Tapped="BulkDecode">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xe8b7;" />
-                        <TextBlock Text="Folder" Margin="5" />
+                        <TextBlock Text="Bulk Decode" Margin="5" />
                     </StackPanel>
                 </Button>
                 <Button HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center"
@@ -163,7 +166,7 @@
                  AcceptsReturn="True" TextWrapping="Wrap"
                  IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                  ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled"
-                 PlaceholderText="Pick a tool on the left to begin decoding." />
+                 PlaceholderText="Pick a tool on the left or press ctrl+v to paste an image from your clipboard." />
 
         <CommandBar CornerRadius="4" OverflowButtonVisibility="Auto" DefaultLabelPosition="Collapsed"
                     IsDynamicOverflowEnabled="True" IsSticky="True" HorizontalAlignment="Center" Height="Auto"
@@ -202,6 +205,11 @@
         <ScrollViewer Grid.Column="2" x:Name="BarcodeScroller" HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch" Margin="0,0,10,50" IsEnabled="False" Padding="10"
                       Visibility="Collapsed" ZoomMode="Enabled" />
+        <MediaPlayerElement Grid.Column="2" x:Name="CameraPreview" 
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Margin="0,10,10,50" Visibility="Collapsed"
+                          AreTransportControlsEnabled="False" />
+        
         <Image Grid.Column="2" x:Name="BarcodeViewer" Stretch="Uniform" HorizontalAlignment="Stretch"
                VerticalAlignment="Top" Margin="0,10,10,50">
 

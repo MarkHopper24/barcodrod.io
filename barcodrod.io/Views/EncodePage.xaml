@@ -17,15 +17,69 @@
         <InfoBar Margin="0,0,9,50" Canvas.ZIndex="1" Grid.Column="1" HorizontalAlignment="Stretch" x:Name="EncodeError"
                  IsOpen="False" HorizontalContentAlignment="Stretch" VerticalAlignment="Bottom" />
 
-        <Button x:Name="EncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Grid.Column="0"
-                VerticalAlignment="Top" Tapped="CreateBarcode" Margin="10">
-            <StackPanel Orientation="Horizontal">
-                <SymbolIcon Symbol="Accept" />
-                <TextBlock Text="Create Barcode" Margin="5" />
-            </StackPanel>
-        </Button>
+        <TeachingTip x:Name="BulkEncodeTip" Grid.Column="2" Title="Encoding..." VerticalAlignment="Stretch"
+                     HorizontalAlignment="Stretch">
+            <TeachingTip.CloseButtonStyle>
+                <Style TargetType="Button">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="CornerRadius" Value="4" />
+                </Style>
+            </TeachingTip.CloseButtonStyle>
+            <TeachingTip.CloseButtonContent>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                    <TextBlock Text=" Cancel" VerticalAlignment="Stretch" />
+                </StackPanel>
+            </TeachingTip.CloseButtonContent>
+            <TeachingTip.Content>
+                <StackPanel Margin="0,10,0,0">
+                    <ProgressRing x:Name="BulkEncodeProgress" IsActive="False" IsIndeterminate="False"
+                                  Margin="0,0,0,15" Height="115" Width="115" />
+                    <TextBlock x:Name="BulkEncodeTotalFiles" Margin="0,0,0,25" HorizontalAlignment="Center"
+                               Style="{ThemeResource BaseTextBlockStyle}" FontSize="20" />
+                    <TextBlock x:Name="BulkEncodeFailedStat" Margin="0,0,0,20" HorizontalAlignment="Center"
+                               TextAlignment="Center" TextWrapping="WrapWholeWords" Visibility="Collapsed" />
+                    <Button x:Name="OpenBulkEncodeOutputButton" HorizontalAlignment="Stretch"
+                            Click="OpenBulkEncodeOutput" Margin="0,0,0,5" IsEnabled="False">
+                        <StackPanel Orientation="Horizontal" Height="Auto" HorizontalAlignment="Stretch">
+                            <SymbolIcon Symbol="OpenWith" VerticalAlignment="Stretch" />
+                            <TextBlock Text="Open Output Folder" Margin="5,0,0,0" IsColorFontEnabled="True" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </TeachingTip.Content>
+        </TeachingTip>
 
-        <ListView x:Name="BarcodeSelector" Margin="6,60,0,0" Grid.Column="0" VerticalAlignment="Stretch"
+        <ScrollViewer Grid.Column="0" Margin="10,10,0,0" Padding="0,0,10,0" ScrollViewer.VerticalScrollBarVisibility="Visible"
+                      ScrollViewer.VerticalScrollMode="Enabled">
+            <StackPanel Width="Auto" VerticalAlignment="Top" Height="Auto" HorizontalAlignment="Stretch">
+                <Button x:Name="EncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Margin="0,0,0,5" Tapped="CreateBarcode" Height="Auto">
+                    <StackPanel Orientation="Horizontal">
+                        <SymbolIcon Symbol="Accept" />
+                        <TextBlock Text="Create Barcode" Margin="5" />
+                    </StackPanel>
+                </Button>
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="BulkEncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Grid.Column="0" Tapped="BulkEncode"
+                            ToolTipService.ToolTip="Encode barcodes from a .CSV file and save them to a folder.">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xe8b7;" />
+                            <TextBlock Text="Bulk Encode" Margin="5" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="BulkEncodeInfoButton" Grid.Column="1" Margin="4,0,0,0"
+                            ToolTipService.ToolTip="CSV format info" Click="ShowBulkEncodeInfo"
+                            Padding="5" MinWidth="0" VerticalAlignment="Center" Opacity="0.60">
+                        <FontIcon Glyph="&#xE946;" FontSize="14" />
+                    </Button>
+                </Grid>
+
+                <ListView x:Name="BarcodeSelector" Margin="0" Grid.Column="0" VerticalAlignment="Stretch"
                   HorizontalAlignment="Stretch" Padding="0,0,8,0" SelectedValue="QR_CODE" Background="Transparent">
             <x:String>QR_CODE</x:String>
             <x:String>CODE_128</x:String>
@@ -40,11 +94,14 @@
             <x:String>AZTEC</x:String>
             <x:String>MSI</x:String>
             <x:String>PLESSEY</x:String>
-        </ListView>
+                </ListView>
+            </StackPanel>
+        </ScrollViewer>
 
         <TextBox Grid.Column="1" x:Name="TxtActivityLog" Padding="8,5,8,0" Canvas.ZIndex="0" Margin="0,10,10,50"
                  Height="Auto"
                  AcceptsReturn="True" TextWrapping="Wrap"
+                 Paste="TxtActivityLog_Paste"
                  IsEnabled="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                  ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollMode="Enabled"
                  PlaceholderText="Enter text to encode here." />
@@ -239,6 +296,38 @@
 
             <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image'
                           ToolTipService.ToolTip="Open Image" Click="OpenImage" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="LogoOverlayButton" Label="Logo Overlay"
+                          ToolTipService.ToolTip="Overlay a logo on the QR code" IsEnabled="False" CornerRadius="4">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE8B9;" />
+                </AppBarButton.Icon>
+                <AppBarButton.Flyout>
+                    <Flyout>
+                        <StackPanel Orientation="Vertical" MaxWidth="250">
+                            <TextBlock Style="{ThemeResource BaseTextBlockStyle}" Text="Logo Overlay"
+                                       Margin="0,0,0,5" />
+                            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="Select an image to overlay on the center of the QR code. Error correction will be set to H (30%) automatically." />
+                            <Button x:Name="SelectLogoButton"
+                                    Click="SelectLogo" Margin="0,0,0,5">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xEB9F;" FontSize="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Select Image" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="RemoveLogoButton"
+                                    Click="RemoveLogo" Margin="0,0,0,0" IsEnabled="False">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Remove Logo" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock x:Name="LogoStatusText" Margin="0,10,0,0"
+                                       TextWrapping="Wrap" Visibility="Collapsed" />
+                        </StackPanel>
+                    </Flyout>
+                </AppBarButton.Flyout>
+            </AppBarButton>
             <AppBarButton x:Name="ChangeBarcodeColorButton" Label="Modify Colors"
                           ToolTipService.ToolTip="Modify Colors" IsEnabled="False" CornerRadius="4">
                 <AppBarButton.Icon>

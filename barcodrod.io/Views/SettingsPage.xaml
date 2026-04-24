@@ -11,13 +11,75 @@
         <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
     </Page.Resources>
     <Grid>
-        <StackPanel
-            x:Name="ContentArea">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      VerticalScrollMode="Auto"
+                      HorizontalScrollBarVisibility="Auto"
+                      HorizontalScrollMode="Auto">
+            <StackPanel
+                x:Name="ContentArea" Margin="15">
+            <TextBlock Text="App Settings" Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Margin="0,0,0,10" />
+            <StackPanel Orientation="Horizontal" Margin="15,0,0,20">
+                <StackPanel Margin="0,0,20,0">
+                    <TextBlock Text="Launch:" />
+                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
+                        <ComboBox x:Name="DefaultLaunchPageSelector"
+                                  SelectionChanged="UpdateDefaultLaunchPage"
+                                  MinWidth="220"
+                                  PlaceholderText="Default page on app launch">
+                            <x:String>Decode</x:String>
+                            <x:String>Encode</x:String>
+                            <x:String>History</x:String>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
 
-            <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}"
-                       Margin="10,0,0,0" />
-            <StackPanel Orientation="Horizontal">
-                <StackPanel Margin="15,10,0,20">
+                <StackPanel Margin="0,0,20,0">
+                    <TextBlock Text="History:" />
+                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
+                        <CheckBox x:Name="HistoryEnabled" FontSize="15" Content="Enabled" Margin="0,0,0,0"
+                                  Checked="EnableHistory" Unchecked="DisableHistory" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Margin="0,0,20,0">
+                    <TextBlock Text="Decode:" />
+                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
+                        <CheckBox x:Name="AutoCopyToClipboard" FontSize="15" Content="Auto-copy to clipboard"
+                                  Margin="0,0,0,0" Checked="EnableAutoCopy" Unchecked="DisableAutoCopy"
+                                  ToolTipService.ToolTip="Automatically copy decoded text to the clipboard after a successful scan." />
+                        <CheckBox x:Name="AutoOpenUrl" FontSize="15" Content="Auto-open URL in browser"
+                                  Margin="0,5,0,0" Checked="EnableAutoOpenUrl" Unchecked="DisableAutoOpenUrl"
+                                  ToolTipService.ToolTip="Automatically open decoded URLs in your default browser after a successful scan." />
+                        <CheckBox x:Name="PasteToDecode" FontSize="15" Content="Ctrl+V to decode"
+                                  Margin="0,5,0,0" Checked="EnablePasteToDecode" Unchecked="DisablePasteToDecode"
+                                  ToolTipService.ToolTip="Paste an image from the clipboard with Ctrl+V to decode it on the Decode page." />
+                        <CheckBox x:Name="UseLegacyDirectShow"
+                                  FontSize="15"
+                                  Content="Use legacy DirectShow webcam engine"
+                                  Margin="0,5,0,0"
+                                  Checked="ToggleLegacyDirectShow"
+                                  Unchecked="ToggleLegacyDirectShow"
+                                  ToolTipService.ToolTip="Uses the legacy AForge DirectShow webcam path. Requires app restart." />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Margin="0,0,0,0">
+                    <TextBlock Text="Encode:" />
+                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
+                        <CheckBox x:Name="AutoEncodeOnPaste" FontSize="15"
+                                  Content="Auto-create barcode on paste"
+                                  Margin="0,0,0,0" Checked="EnableAutoEncodeOnPaste"
+                                  Unchecked="DisableAutoEncodeOnPaste"
+                                  ToolTipService.ToolTip="When text is pasted on the Encode page, automatically create a barcode using the current settings." />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock Text="Personalization" Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Margin="0,0,0,10" />
+            <StackPanel Orientation="Horizontal" Margin="15,0,0,20">
+                <StackPanel Margin="0,0,20,0">
                     <TextBlock x:Uid="Settings_Theme" />
 
                     <StackPanel Margin="{StaticResource XSmallTopMargin}">
@@ -52,57 +114,30 @@
                             </RadioButton.CommandParameter>
                         </RadioButton>
                     </StackPanel>
-
-
                 </StackPanel>
 
-                <StackPanel Margin="20,10,0,20">
+                <StackPanel Margin="0,0,0,0">
                     <RadioButtons x:Name="Backdrops" SelectionChanged="UpdateBackDrop" SelectedIndex="0"
                                   Header="Backdrop:">
                         <x:String>Mica Alt</x:String>
                         <x:String>Mica</x:String>
                         <x:String>Acrylic</x:String>
+                        <x:String>Acrylic Alt</x:String>
                     </RadioButtons>
-
                 </StackPanel>
-
-                <StackPanel Margin="20,10,0,20">
-                    <TextBlock Text="History: " />
-
-                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
-
-                        <CheckBox x:Name="HistoryEnabled" FontSize="15" Content="Enabled" Margin="0,0,0,0"
-                                  Checked="EnableHistory" Unchecked="DisableHistory" />
-
-
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Margin="20,10,0,20">
-                    <TextBlock Text="Decode: " />
-
-                    <StackPanel Margin="{StaticResource XSmallTopMargin}">
-
-                        <CheckBox x:Name="AutoCopyToClipboard" FontSize="15" Content="Auto-copy to clipboard"
-                                  Margin="0,0,0,0" Checked="EnableAutoCopy" Unchecked="DisableAutoCopy"
-                                  ToolTipService.ToolTip="Automatically copy decoded text to the clipboard after a successful scan." />
-
-                    </StackPanel>
-                </StackPanel>
-
             </StackPanel>
 
-
-            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="10,0,0,0"
+            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" Margin="0,0,0,10"
                        VerticalAlignment="Bottom" />
 
-            <StackPanel Margin="15,10,0,0">
+            <StackPanel Margin="15,0,0,0">
                 <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}"
                            Style="{ThemeResource BodyTextBlockStyle}" />
 
-                <TextBlock
-                    x:Uid="Settings_AboutDescription"
-                    Margin="{StaticResource XSmallTopMargin}"
+                <TextBlock 
+                    x:Uid="Settings_AboutDescription" 
+                    Margin="{StaticResource XSmallTopMargin}" HorizontalAlignment="Left" MaxWidth="830"
+                    TextWrapping="WrapWholeWords"
                     Style="{ThemeResource BodyTextBlockStyle}" />
                 <StackPanel Orientation="Horizontal" Spacing="50">
                     <HyperlinkButton Content="barcodrod.io" NavigateUri="https://barcodrod.io"
@@ -115,7 +150,8 @@
                 </StackPanel>
             </StackPanel>
 
-        </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
 
     </Grid>
 </Page>
