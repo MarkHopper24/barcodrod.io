@@ -54,6 +54,13 @@
                         <CheckBox x:Name="PasteToDecode" FontSize="15" Content="Ctrl+V to decode"
                                   Margin="0,5,0,0" Checked="EnablePasteToDecode" Unchecked="DisablePasteToDecode"
                                   ToolTipService.ToolTip="Paste an image from the clipboard with Ctrl+V to decode it on the Decode page." />
+                        <CheckBox x:Name="UseLegacyDirectShow"
+                                  FontSize="15"
+                                  Content="Use legacy DirectShow webcam engine"
+                                  Margin="0,5,0,0"
+                                  Checked="ToggleLegacyDirectShow"
+                                  Unchecked="ToggleLegacyDirectShow"
+                                  ToolTipService.ToolTip="Uses the legacy AForge DirectShow webcam path. Requires app restart." />
                     </StackPanel>
                 </StackPanel>
 

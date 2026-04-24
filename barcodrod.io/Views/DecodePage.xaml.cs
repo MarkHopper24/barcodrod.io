@@ -4,6 +4,8 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
+using AForge.Video;
+using AForge.Video.DirectShow;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Drawing;
@@ -55,6 +57,10 @@ public partial class DecodePage : Page
     private StorageFile? currentLogPath;
     private StorageFolder? localFolder;
     private bool _hasProcessedLaunchArgument;
+    private bool _useLegacyDirectShow;
+    private FilterInfoCollection? _directShowVideoDevices;
+    private VideoCaptureDevice? _directShowVideoDevice;
+    private int _isProcessingDirectShowFrame;
 
     private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -70,7 +76,7 @@ public partial class DecodePage : Page
         InitializeLog();
         LoadPasteToDecodeSetting();
 
-        _ = InitializeCameraDevicesAsync();
+        _ = InitializeCameraBackendAsync();
 
         reader.Options.TryHarder = true;
         reader.Options.TryInverted = true;
@@ -97,6 +103,45 @@ public partial class DecodePage : Page
             ZXing.BarcodeFormat.MSI,
             ZXing.BarcodeFormat.PLESSEY
         };
+    }
+
+    private async Task InitializeCameraBackendAsync()
+    {
+        await LoadLegacyWebcamSettingAsync();
+        await InitializeCameraDevicesAsync();
+    }
+
+    private static bool IsLegacyDirectShowSupportedArchitecture()
+    {
+        return RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86;
+    }
+
+    private async Task LoadLegacyWebcamSettingAsync()
+    {
+        try
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+            if (!File.Exists(settingsFilePath))
+            {
+                _useLegacyDirectShow = false;
+                return;
+            }
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                _useLegacyDirectShow = false;
+                return;
+            }
+
+            var settings = JObject.Parse(json);
+            _useLegacyDirectShow = IsLegacyDirectShowSupportedArchitecture() && settings["UseLegacyDirectShow"]?.Value<bool>() == true;
+        }
+        catch
+        {
+            _useLegacyDirectShow = false;
+        }
     }
 
     public async Task InitializeLog()
@@ -145,17 +190,44 @@ public partial class DecodePage : Page
     {
         try
         {
-            VideoCaptureDevices = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector());
+            comboBox1.Items.Clear();
+            comboBox2.Items.Clear();
+            comboBox2.Visibility = Visibility.Collapsed;
+            DirectShowButton.Tapped -= InitializeMediaCaptureCam;
+            DirectShowButton.Tapped -= CustomCameraCaptureUI;
+            DirectShowButton.Tapped -= InitializeLegacyDirectShowCam;
 
-            if (VideoCaptureDevices.Count > 0)
+            if (_useLegacyDirectShow)
             {
-                foreach (var device in VideoCaptureDevices)
-                    comboBox1.Items.Add(device.Name);
+                _directShowVideoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+                if (_directShowVideoDevices.Count > 0)
+                {
+                    foreach (FilterInfo device in _directShowVideoDevices)
+                        comboBox1.Items.Add(device.Name);
 
-                var uri = new Uri("microsoft.windows.camera:");
-                var canLaunch = await Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe");
-                if (canLaunch == LaunchQuerySupportStatus.Available)
-                    comboBox1.Items.Add("Windows Camera app");
+                    DirectShowButton.Tapped += InitializeLegacyDirectShowCam;
+
+                    if (comboBox1.Items.Count > 0)
+                    {
+                        comboBox1.SelectedIndex = 0;
+                        PopulateLegacyDirectShowResolutions();
+                    }
+                }
+            }
+            else
+            {
+                VideoCaptureDevices = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector());
+
+                if (VideoCaptureDevices.Count > 0)
+                {
+                    foreach (var device in VideoCaptureDevices)
+                        comboBox1.Items.Add(device.Name);
+
+                    var uri = new Uri("microsoft.windows.camera:");
+                    var canLaunch = await Launcher.QueryUriSupportAsync(uri, LaunchQuerySupportType.Uri, "Microsoft.WindowsCamera_8wekyb3d8bbwe");
+                    if (canLaunch == LaunchQuerySupportStatus.Available)
+                        comboBox1.Items.Add("Windows Camera app");
+                }
             }
 
             if (comboBox1.Items.Count == 0)
@@ -514,17 +586,36 @@ public partial class DecodePage : Page
 
         await StopCameraPreviewAsync();
 
+        if (_useLegacyDirectShow)
+        {
+            if (comboBox1.Items.Count > 0 && comboBox1.SelectedItem != null)
+            {
+                comboBox2.Visibility = Visibility.Visible;
+                DirectShowButton.Tapped -= InitializeMediaCaptureCam;
+                DirectShowButton.Tapped -= CustomCameraCaptureUI;
+                DirectShowButton.Tapped -= InitializeLegacyDirectShowCam;
+                DirectShowButton.Tapped += InitializeLegacyDirectShowCam;
+                PopulateLegacyDirectShowResolutions();
+                Log("Camera source changed to " + comboBox1.SelectedItem.ToString());
+            }
+
+            _ = SaveWebcamSettings();
+            return;
+        }
+
         if (comboBox1.Items.Count > 0 && comboBox1.SelectedItem != null)
         {
             if (comboBox1.SelectedItem.ToString() == "Windows Camera app")
             {
                 comboBox2.Visibility = Visibility.Collapsed;
                 DirectShowButton.Tapped -= InitializeMediaCaptureCam;
+                DirectShowButton.Tapped -= CustomCameraCaptureUI;
                 DirectShowButton.Tapped += CustomCameraCaptureUI;
             }
             else
             {
                 comboBox2.Visibility = Visibility.Visible;
+                DirectShowButton.Tapped -= InitializeMediaCaptureCam;
                 DirectShowButton.Tapped -= CustomCameraCaptureUI;
                 DirectShowButton.Tapped += InitializeMediaCaptureCam;
 
@@ -536,6 +627,30 @@ public partial class DecodePage : Page
         }
 
         _ = SaveWebcamSettings();
+    }
+
+    private void PopulateLegacyDirectShowResolutions()
+    {
+        comboBox2.Items.Clear();
+
+        try
+        {
+            if (comboBox1.SelectedIndex < 0 || _directShowVideoDevices == null || comboBox1.SelectedIndex >= _directShowVideoDevices.Count)
+                return;
+
+            var selectedSource = new VideoCaptureDevice(_directShowVideoDevices[comboBox1.SelectedIndex].MonikerString);
+            foreach (var capability in selectedSource.VideoCapabilities)
+            {
+                comboBox2.Items.Add($"{capability.FrameSize.Width} x {capability.FrameSize.Height}");
+            }
+
+            if (comboBox2.Items.Count > 0)
+                comboBox2.SelectedIndex = 0;
+        }
+        catch (Exception ex)
+        {
+            Log("Error populating legacy DirectShow resolutions: " + ex.Message);
+        }
     }
 
     private async Task PopulateCameraResolutionsAsync()
@@ -592,6 +707,12 @@ public partial class DecodePage : Page
 
     private async Task StopCameraPreviewAsync()
     {
+        if (_useLegacyDirectShow)
+        {
+            await StopLegacyDirectShowPreviewAsync();
+            return;
+        }
+
         if (Interlocked.CompareExchange(ref _isStopping, 1, 0) != 0)
             return;
 
@@ -777,6 +898,150 @@ public partial class DecodePage : Page
 
     private int _isProcessingFrame; // 0 = idle, 1 = busy (interlocked guard)
     private int _isStopping; // 0 = idle, 1 = stopping (interlocked guard)
+
+    private async void InitializeLegacyDirectShowCam(object sender, RoutedEventArgs e)
+    {
+        if (_directShowVideoDevice?.IsRunning == true)
+        {
+            BarcodeViewer.ClearValue(Image.SourceProperty);
+            await StopLegacyDirectShowPreviewAsync();
+            return;
+        }
+
+        try
+        {
+            frameCount = 0;
+            detectedCode = null;
+
+            if (comboBox1.SelectedIndex < 0 || _directShowVideoDevices == null || comboBox1.SelectedIndex >= _directShowVideoDevices.Count)
+            {
+                Log("Invalid legacy camera selection");
+                return;
+            }
+
+            var selectedDevice = _directShowVideoDevices[comboBox1.SelectedIndex];
+            _directShowVideoDevice = new VideoCaptureDevice(selectedDevice.MonikerString);
+
+            if (_directShowVideoDevice.VideoCapabilities.Length > 0)
+            {
+                var resolutionIndex = comboBox2.SelectedIndex;
+                if (resolutionIndex < 0 || resolutionIndex >= _directShowVideoDevice.VideoCapabilities.Length)
+                    resolutionIndex = 0;
+
+                _directShowVideoDevice.VideoResolution = _directShowVideoDevice.VideoCapabilities[resolutionIndex];
+            }
+
+            _directShowVideoDevice.NewFrame += DirectShowDevice_NewFrame;
+            _directShowVideoDevice.Start();
+
+            DirectShowButtonTextBlock.Text = "Stop Video";
+            CameraPreview.Visibility = Visibility.Collapsed;
+            BarcodeViewer.Visibility = Visibility.Visible;
+            Log("Legacy DirectShow preview started");
+
+            while (detectedCode == null && _directShowVideoDevice?.IsRunning == true)
+                await Task.Delay(1000);
+
+            if (detectedCode != null)
+            {
+                var result = DecodeBitmap(detectedCode);
+                if (result != null)
+                {
+                    DidDecodeSucceed(0);
+                    TxtActivityLog.Text = result;
+                    BitmapToImageSource(detectedCode);
+                    DirectShowButtonTextBlock.Text = "Webcam";
+                    var isUri = await IsResultURI();
+                    if (isUri) OpenTextWithButton.IsEnabled = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("Error starting legacy DirectShow camera: " + ex.Message);
+            await StopLegacyDirectShowPreviewAsync();
+        }
+    }
+
+    private async Task StopLegacyDirectShowPreviewAsync()
+    {
+        try
+        {
+            if (_directShowVideoDevice != null)
+            {
+                _directShowVideoDevice.NewFrame -= DirectShowDevice_NewFrame;
+
+                if (_directShowVideoDevice.IsRunning)
+                {
+                    await Task.Run(() =>
+                    {
+                        _directShowVideoDevice.SignalToStop();
+                        _directShowVideoDevice.WaitForStop();
+                    });
+                }
+
+                _directShowVideoDevice = null;
+            }
+
+            DirectShowButtonTextBlock.Text = "Webcam";
+        }
+        catch (Exception ex)
+        {
+            Log("Error stopping legacy DirectShow camera: " + ex.Message);
+        }
+    }
+
+    private void DirectShowDevice_NewFrame(object sender, NewFrameEventArgs eventArgs)
+    {
+        if (detectedCode != null)
+            return;
+
+        frameCount++;
+
+        if (Interlocked.CompareExchange(ref _isProcessingDirectShowFrame, 1, 0) != 0)
+            return;
+
+        try
+        {
+            using (var video = (Bitmap)eventArgs.Frame.Clone())
+            {
+                var memory = new MemoryStream();
+                video.Save(memory, ImageFormat.Bmp);
+                memory.Position = 0;
+
+                if (frameCount % 10 == 0)
+                {
+                    if (SilentDecodeBitmap(video))
+                    {
+                        detectedCode = (Bitmap)video.Clone();
+                        DispatcherQueue.TryEnqueue(async () => { await StopLegacyDirectShowPreviewAsync(); });
+                        return;
+                    }
+                }
+
+                if (DispatcherQueue == null)
+                {
+                    _ = StopLegacyDirectShowPreviewAsync();
+                    return;
+                }
+
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    var bitmapImage = new BitmapImage();
+                    bitmapImage.SetSource(memory.AsRandomAccessStream());
+                    BarcodeViewer.SetValue(Image.SourceProperty, bitmapImage);
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("Error processing legacy DirectShow frame: " + ex.Message);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _isProcessingDirectShowFrame, 0);
+        }
+    }
 
     private void FrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
     {
@@ -1131,6 +1396,7 @@ public partial class DecodePage : Page
         //WebcamButton.Text = "Windows Camera";
 
         if (m_isPreviewing) await StopCameraPreviewAsync();
+        if (_directShowVideoDevice?.IsRunning == true) await StopLegacyDirectShowPreviewAsync();
 
         if (lastDecoded != null) lastDecoded.Dispose();
 

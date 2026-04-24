@@ -1,10 +1,12 @@
 ﻿using barcodrod.io.Helpers;
 using barcodrod.io.ViewModels;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Runtime.InteropServices;
 using Windows.Storage;
 
 namespace barcodrod.io.Views;
@@ -17,12 +19,14 @@ public sealed partial class SettingsPage : Page
     private StorageFolder? localFolder;
     private string? settingsFilePath;
     private bool SettingsLoaded = false;
+    private bool _updatingLegacyDirectShowToggle;
 
     public SettingsPage()
     {
         ViewModel = App.GetService<SettingsViewModel>();
         InitializeComponent();
         if (IsMicaSupported() == false) Backdrops.Visibility = Visibility.Collapsed;
+        if (!IsLegacyDirectShowSupportedArchitecture()) UseLegacyDirectShow.Visibility = Visibility.Collapsed;
 
         try
         {
@@ -82,6 +86,7 @@ public sealed partial class SettingsPage : Page
             var autoOpenUrl = false;
             var pasteToDecode = false;
             var autoEncodeOnPaste = false;
+            var useLegacyDirectShow = false;
             var defaultLaunchPage = "barcodrod.io.ViewModels.DecodeViewModel";
             //if settings.json doesn't exist, create it with barcodrod.io defaults
             if (File.Exists(settingsFilePath) == false)
@@ -94,6 +99,7 @@ public sealed partial class SettingsPage : Page
                     BackdropIndex = backdropIndex,
                     AutoCopyToClipboard = autoCopyToClipboard,
                     AutoEncodeOnPaste = autoEncodeOnPaste,
+                    UseLegacyDirectShow = useLegacyDirectShow,
                     DefaultLaunchPage = defaultLaunchPage
                 };
 
@@ -120,6 +126,8 @@ public sealed partial class SettingsPage : Page
                             pasteToDecode = loadedData.PasteToDecode;
                         if (loadedData.AutoEncodeOnPaste != null)
                             autoEncodeOnPaste = loadedData.AutoEncodeOnPaste;
+                        if (loadedData.UseLegacyDirectShow != null)
+                            useLegacyDirectShow = loadedData.UseLegacyDirectShow;
                         if (loadedData.DefaultLaunchPage != null)
                             defaultLaunchPage = loadedData.DefaultLaunchPage;
 
@@ -138,6 +146,9 @@ public sealed partial class SettingsPage : Page
             AutoOpenUrl.IsChecked = autoOpenUrl;
             PasteToDecode.IsChecked = pasteToDecode;
             AutoEncodeOnPaste.IsChecked = autoEncodeOnPaste;
+            _updatingLegacyDirectShowToggle = true;
+            UseLegacyDirectShow.IsChecked = useLegacyDirectShow;
+            _updatingLegacyDirectShowToggle = false;
             DefaultLaunchPageSelector.SelectedIndex = defaultLaunchPage switch
             {
                 "barcodrod.io.ViewModels.EncodeViewModel" => 1,
@@ -158,6 +169,7 @@ public sealed partial class SettingsPage : Page
                 HistoryEnabled = true,
                 BackdropIndex = 0,
                 AutoEncodeOnPaste = false,
+                UseLegacyDirectShow = false,
                 DefaultLaunchPage = "barcodrod.io.ViewModels.DecodeViewModel"
             };
 
@@ -415,5 +427,57 @@ public sealed partial class SettingsPage : Page
         };
 
         File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+    }
+
+    private static bool IsLegacyDirectShowSupportedArchitecture()
+    {
+        return RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86;
+    }
+
+    private async void ToggleLegacyDirectShow(object sender, RoutedEventArgs e)
+    {
+        if (!SettingsLoaded || _updatingLegacyDirectShowToggle)
+            return;
+
+        var requestedValue = UseLegacyDirectShow.IsChecked == true;
+        var localFolder = ApplicationData.Current.LocalFolder;
+        var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+        JObject settings;
+        if (File.Exists(settingsFilePath))
+        {
+            var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
+            settings = string.IsNullOrWhiteSpace(jsonSettings) ? new JObject() : JObject.Parse(jsonSettings);
+        }
+        else
+        {
+            settings = new JObject();
+        }
+
+        var currentValue = settings["UseLegacyDirectShow"]?.Value<bool>() ?? false;
+        if (currentValue == requestedValue)
+            return;
+
+        var restartDialog = new ContentDialog
+        {
+            Title = "Restart required",
+            Content = "Switching webcam engine requires restarting barcodrod.io now. Restart now?",
+            PrimaryButtonText = "Restart now",
+            CloseButtonText = "Cancel",
+            XamlRoot = XamlRoot
+        };
+
+        var dialogResult = await restartDialog.ShowAsync();
+        if (dialogResult != ContentDialogResult.Primary)
+        {
+            _updatingLegacyDirectShowToggle = true;
+            UseLegacyDirectShow.IsChecked = currentValue;
+            _updatingLegacyDirectShowToggle = false;
+            return;
+        }
+
+        settings["UseLegacyDirectShow"] = requestedValue;
+        File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
+        AppInstance.Restart(string.Empty);
     }
 }
