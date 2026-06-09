@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SignPath artifact configuration for the barcodrod.io MSI.
+
+  - Deep-signs the first-party binaries (barcodrod.io.exe / barcodrod.io.dll) and enforces the
+    SignPath OSS metadata requirements: product name + product version must be set and match.
+    The build stamps these via installer/build-msi.ps1 (-p:FileVersion / -p:InformationalVersion),
+    and the workflow passes the matching value in the `version` parameter.
+  - Signs the MSI package itself.
+  - Third-party / upstream OSS binaries (ZXing.Net, AForge, CommunityToolkit, the Windows App SDK
+    runtime, etc.) are shipped as-is and are not signed with this certificate, as permitted by the
+    SignPath Foundation OSS terms.
+
+  Validate this against a real MSI by uploading a sample in the SignPath project
+  (Artifact Configurations -> Update from an artifact sample) and adjusting file paths if needed.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <msi-file>
+    <pe-file-set product-name="barcodrod.io" product-version="${version}">
+      <include path="barcodrod.io.exe" />
+      <include path="barcodrod.io.dll" />
+      <for-each>
+        <authenticode-sign />
+      </for-each>
+    </pe-file-set>
+    <authenticode-sign />
+  </msi-file>
+</artifact-configuration>

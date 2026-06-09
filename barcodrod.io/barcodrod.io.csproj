@@ -20,11 +20,12 @@
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
-    <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <BuildAppxUploadPackageForUap>false</BuildAppxUploadPackageForUap>
     <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
     <UserSecretsId>b509cab9-7bac-4a2a-b212-4c9b770155a3</UserSecretsId>
-    <AppxPackageDir>D:\barcodrod.io_builds\</AppxPackageDir>
+    <!-- Output packages to a repo-relative folder by default so CI and other contributors don't
+         depend on a machine-specific path. CI overrides this with /p:AppxPackageDir on the command line. -->
+    <AppxPackageDir Condition="'$(AppxPackageDir)' == ''">$(MSBuildThisFileDirectory)AppPackages\</AppxPackageDir>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <ApplicationIcon>Assets\WindowIcon.ico</ApplicationIcon>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>

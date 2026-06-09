@@ -1,0 +1,155 @@
+name: build-and-sign-msi
+
+# Builds the classic (unpackaged) barcodrod.io MSI for x64 and arm64 and code-signs it via SignPath.
+#
+#   pull_request            -> build only (validates the installer builds)
+#   workflow_dispatch       -> build + SignPath test-signing (validate the signing pipeline)
+#   push tag 'v*'           -> build + SignPath release-signing + GitHub Release with checksums
+#
+# The Microsoft Store continues to sign and distribute the MSIX; this workflow only produces the
+# offline-installable, SignPath-signed MSI (see issue #25).
+#
+# Required GitHub configuration (Settings -> Secrets and variables -> Actions):
+#   Secret    SIGNPATH_API_TOKEN                          - SignPath API token (submitter role)
+#   Variable  SIGNPATH_ORGANIZATION_ID                    - SignPath organization id (GUID)
+#   Variable  SIGNPATH_PROJECT_SLUG                       - SignPath project slug
+#   Variable  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG    - artifact configuration slug for the MSI
+# Also recommended: install the SignPath GitHub App on this repository.
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WIX_VERSION: '5.0.2'
+  # Test policy for manual/dispatch validation; release (manual-approval) policy for version tags.
+  SIGNPATH_SIGNING_POLICY: ${{ startsWith(github.ref, 'refs/tags/v') && 'release-signing' || 'test-signing' }}
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Derive version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $v = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          } else {
+            $v = "0.0.0.$($env:GITHUB_RUN_NUMBER)"
+          }
+          $parts = @($v.Split('.'))
+          while ($parts.Count -lt 4) { $parts += '0' }
+          $v = ($parts[0..3] -join '.')
+          "version=$v" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved version: $v"
+
+      - name: Install WiX ${{ env.WIX_VERSION }}
+        run: dotnet tool install --global wix --version ${{ env.WIX_VERSION }}
+
+      - name: Build MSI (${{ matrix.arch }})
+        shell: pwsh
+        run: ./installer/build-msi.ps1 -Version ${{ steps.ver.outputs.version }} -Architecture ${{ matrix.arch }}
+
+      - name: Upload unsigned MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-unsigned-${{ matrix.arch }}
+          path: artifacts/msi/barcodrod.io-*-${{ matrix.arch }}.msi
+          if-no-files-found: error
+
+  sign-msi:
+    # Sign on version tags (release) and on manual dispatch (test). PR builds are validate-only and
+    # do not have access to the signing secret (e.g. fork PRs), so they are intentionally excluded.
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: build-msi
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Download unsigned MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-unsigned-${{ matrix.arch }}
+          path: unsigned
+
+      - name: Re-upload artifact for signing
+        id: tosign
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-tosign-${{ matrix.arch }}
+          path: unsigned/*.msi
+          if-no-files-found: error
+
+      - name: Submit signing request to SignPath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.tosign.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+          parameters: |
+            version: "${{ needs.build-msi.outputs.version }}"
+
+      - name: Upload signed MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-signed-${{ matrix.arch }}
+          path: signed/**/*.msi
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: sign-msi
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed MSIs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: msi-signed-*
+          path: dist
+          merge-multiple: true
+
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: |
+          $lines = Get-ChildItem dist -Recurse -Filter *.msi |
+            ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash, $_.Name }
+          $lines | Out-File dist/SHA256SUMS.txt -Encoding ascii
+          $lines | Write-Host
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem dist -Recurse -File | ForEach-Object { $_.FullName }
+          gh release create "$env:GITHUB_REF_NAME" $assets --title "$env:GITHUB_REF_NAME" --generate-notes

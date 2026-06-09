@@ -1,4 +1,4 @@
-﻿using barcodrod.io.Helpers;
+using barcodrod.io.Helpers;
 using barcodrod.io.ViewModels;
 using Microsoft.Windows.AppLifecycle;
 using Microsoft.UI.Xaml;
@@ -76,7 +76,7 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
-            localFolder = ApplicationData.Current.LocalFolder;
+            localFolder = (await AppPaths.GetLocalFolderAsync());
             settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             //barcodrod.io defaults
@@ -160,7 +160,7 @@ public sealed partial class SettingsPage : Page
         catch
         {
             SettingsLoaded = false;
-            localFolder = ApplicationData.Current.LocalFolder;
+            localFolder = (await AppPaths.GetLocalFolderAsync());
             settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
             var settingsFile = await localFolder.CreateFileAsync("settings.json",
                 CreationCollisionOption.ReplaceExisting);
@@ -184,7 +184,7 @@ public sealed partial class SettingsPage : Page
 
     private async void EnableHistory(object sender, RoutedEventArgs e)
     {
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         //read HistoryEnabled from settings.json
@@ -204,7 +204,7 @@ public sealed partial class SettingsPage : Page
     {
         //get the history folder
 
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         //get the history folder
@@ -255,7 +255,7 @@ public sealed partial class SettingsPage : Page
 
     private async void UpdateBackDrop(object sender, SelectionChangedEventArgs e)
     {
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var backdropIndex = Backdrops.SelectedIndex;
@@ -316,7 +316,7 @@ public sealed partial class SettingsPage : Page
     private async void EnableAutoCopy(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -328,7 +328,7 @@ public sealed partial class SettingsPage : Page
     private async void DisableAutoCopy(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -340,7 +340,7 @@ public sealed partial class SettingsPage : Page
     private async void EnableAutoOpenUrl(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -352,7 +352,7 @@ public sealed partial class SettingsPage : Page
     private async void DisableAutoOpenUrl(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -364,7 +364,7 @@ public sealed partial class SettingsPage : Page
     private async void EnablePasteToDecode(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -376,7 +376,7 @@ public sealed partial class SettingsPage : Page
     private async void DisablePasteToDecode(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -388,7 +388,7 @@ public sealed partial class SettingsPage : Page
     private async void EnableAutoEncodeOnPaste(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -400,7 +400,7 @@ public sealed partial class SettingsPage : Page
     private async void DisableAutoEncodeOnPaste(object sender, RoutedEventArgs e)
     {
         if (!SettingsLoaded) return;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -413,7 +413,7 @@ public sealed partial class SettingsPage : Page
     {
         if (!SettingsLoaded) return;
 
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         var jsonSettings = await File.ReadAllTextAsync(settingsFilePath);
@@ -440,7 +440,7 @@ public sealed partial class SettingsPage : Page
             return;
 
         var requestedValue = UseLegacyDirectShow.IsChecked == true;
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         JObject settings;
