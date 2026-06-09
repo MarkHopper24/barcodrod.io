@@ -10,13 +10,14 @@ name: build-and-sign-msi
 # offline-installable, SignPath-signed MSI (see issue #25).
 #
 # Required GitHub configuration (Settings -> Secrets and variables -> Actions):
-#   Secret  SIGNPATH_API_TOKEN  - SignPath API token (submitter role). This is the only secret.
+#   Secret    SIGNPATH_API_TOKEN                          - SignPath API token (submitter role)
+#   Variable  SIGNPATH_ORGANIZATION_ID                    - SignPath organization id (GUID)
+#   Variable  SIGNPATH_PROJECT_SLUG                       - SignPath project slug
+#   Variable  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG    - artifact configuration slug (e.g. 'msi')
 #
-# The non-secret SignPath identifiers (organization id, project slug, artifact-configuration slug)
-# are inlined in the sign-msi job below. The SignPath project must contain:
-#   - signing policies named 'test-signing' and 'release-signing'
-#   - an artifact configuration named 'msi' (see .signpath/artifact-config-msi.xml)
-# Also recommended: install the SignPath GitHub App on this repository.
+# The SignPath project must also contain signing policies named 'test-signing' and
+# 'release-signing', and an artifact configuration named per the variable above
+# (see .signpath/artifact-config-msi.xml). Also recommended: install the SignPath GitHub App.
 
 on:
   push:
@@ -109,10 +110,10 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: '5539614d-dea7-4f4c-8d16-125276a14c03'
-          project-slug: 'barcodrod.io'
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
           signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY }}
-          artifact-configuration-slug: 'msi'
+          artifact-configuration-slug: ${{ vars.SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG }}
           github-artifact-id: ${{ steps.tosign.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: signed
