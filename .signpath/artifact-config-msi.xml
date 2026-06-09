@@ -2,14 +2,15 @@
 <!--
   SignPath artifact configuration for the barcodrod.io MSI.
 
-  This mirrors SignPath's built-in "Windows Installer (.msi)" template: it Authenticode-signs the
-  MSI package itself, which is what Windows / SmartScreen verifies when a user runs the installer
+  IMPORTANT: actions/upload-artifact always packs the uploaded file(s) into a ZIP, so the artifact
+  SignPath receives is a ZIP that contains the .msi. The configuration root must therefore be a
+  <zip-file> wrapping the <msi-file> (per SignPath's GitHub Actions guidance). It Authenticode-signs
+  the MSI package itself, which is what Windows / SmartScreen verifies when a user runs the installer
   (the goal of issue #25). Upstream OSS binaries inside the MSI are shipped as-is and are not signed
   with this certificate, as permitted by the SignPath Foundation OSS terms.
 
-  In the SignPath portal, create an artifact configuration named "msi" (slug: msi) and either keep
-  the default "Windows Installer (.msi)" template (equivalent to this) or paste this XML via
-  "Customize".
+  In the SignPath portal, the artifact configuration (slug 'msi-github') must use this exact XML
+  (Project -> Artifact Configurations -> select 'msi-github' -> Edit -> paste).
 
   Optional hardening for the production SignPath Foundation certificate (add later and validate
   against a real MSI sample via "Update from an artifact sample"): deep-sign the first-party binaries
@@ -18,20 +19,24 @@
     <parameters>
       <parameter name="version" required="true" />
     </parameters>
-    <msi-file>
-      <pe-file-set product-name="barcodrod.io" product-version="${version}">
-        <include path="barcodrod.io.exe" />
-        <include path="barcodrod.io.dll" />
-        <for-each><authenticode-sign /></for-each>
-      </pe-file-set>
-      <authenticode-sign />
-    </msi-file>
+    <zip-file>
+      <msi-file path="*.msi">
+        <pe-file-set product-name="barcodrod.io" product-version="${version}">
+          <include path="barcodrod.io.exe" />
+          <include path="barcodrod.io.dll" />
+          <for-each><authenticode-sign /></for-each>
+        </pe-file-set>
+        <authenticode-sign />
+      </msi-file>
+    </zip-file>
 
   If you enable the parameterized version above, also re-add the matching `parameters:` block to the
   sign-msi step in .github/workflows/release.yml.
 -->
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
-  <msi-file>
-    <authenticode-sign />
-  </msi-file>
+  <zip-file>
+    <msi-file path="*.msi">
+      <authenticode-sign />
+    </msi-file>
+  </zip-file>
 </artifact-configuration>
