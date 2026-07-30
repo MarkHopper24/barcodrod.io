@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+using barcodrod.io.Helpers;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -74,7 +75,7 @@ public sealed partial class EncodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             JObject settings;
@@ -105,7 +106,7 @@ public sealed partial class EncodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             if (!File.Exists(settingsFilePath)) return;
@@ -165,7 +166,7 @@ public sealed partial class EncodePage : Page
     {
         if (lastEncoded != null)
         {
-            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png",
+            var file = await (await AppPaths.GetLocalFolderAsync()).CreateFileAsync("temp.png",
                 CreationCollisionOption.ReplaceExisting);
             lastEncoded.Save(file.Path, ImageFormat.Png);
             var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
@@ -548,7 +549,7 @@ public sealed partial class EncodePage : Page
 
     private async Task<bool> IsHistoryEnabled()
     {
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
         //get the history folder
@@ -576,7 +577,7 @@ public sealed partial class EncodePage : Page
         else
         {
             //create folder called history if it doesn't exist
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var historyFolder = await localFolder.CreateFolderAsync("History", CreationCollisionOption.OpenIfExists);
 
             var files = await historyFolder.GetFilesAsync();

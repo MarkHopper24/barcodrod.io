@@ -2,16 +2,15 @@
 using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Windows.Storage;
 
 namespace barcodrod.io;
 
 public sealed partial class MainWindow : WindowEx
 {
-    private StorageFolder? localFolder;
+    private string? localFolderPath;
     private string? settingsFilePath;
     private bool SettingsLoaded = false;
-    private StorageFile? currentLogPath;
+    private string? currentLogPath;
 
     public MainWindow()
     {
@@ -28,9 +27,9 @@ public sealed partial class MainWindow : WindowEx
         {
             await InitializeLog();
             Log("Initalizing logging.");
-            localFolder = ApplicationData.Current.LocalFolder;
-            Log("localAppFolder: " + localFolder.Path);
-            settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+            localFolderPath = AppPaths.LocalDataFolder;
+            Log("localAppFolder: " + localFolderPath);
+            settingsFilePath = Path.Combine(localFolderPath, "settings.json");
             //barcodrod.io defaults
             var historyEnabled = true;
             var backdropIndex = 0;
@@ -39,8 +38,6 @@ public sealed partial class MainWindow : WindowEx
             if (File.Exists(settingsFilePath) == false)
             {
                 Log("Settings file not found. Creating with default values.");
-                var settingsFile = await localFolder.CreateFileAsync("settings.json",
-                    CreationCollisionOption.OpenIfExists);
                 var data = new
                 {
                     HistoryEnabled = historyEnabled,
@@ -126,10 +123,8 @@ public sealed partial class MainWindow : WindowEx
             Log("Settings file not found. Creating with default values.");
 
             SettingsLoaded = false;
-            localFolder = ApplicationData.Current.LocalFolder;
-            settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
-            var settingsFile = await localFolder.CreateFileAsync("settings.json",
-                CreationCollisionOption.ReplaceExisting);
+            localFolderPath = AppPaths.LocalDataFolder;
+            settingsFilePath = Path.Combine(localFolderPath, "settings.json");
             Log("Settings file created.");
             var data = new
             {
@@ -138,7 +133,6 @@ public sealed partial class MainWindow : WindowEx
             };
 
             var json = JsonConvert.SerializeObject(data, Formatting.Indented);
-            settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
             File.WriteAllText(settingsFilePath, json);
             Log("Default values written.");
 
@@ -178,27 +172,23 @@ public sealed partial class MainWindow : WindowEx
     {
         try
         {
-            localFolder = ApplicationData.Current.LocalFolder;
+            localFolderPath = AppPaths.LocalDataFolder;
 
             //create log file based on current date and time
             var logFileName = "log.txt";
+            var logFullPath = Path.Combine(localFolderPath, logFileName);
 
-            //get the size of log.txt if it exists
-            ulong logSize = 0;
-            if (File.Exists(Path.Combine(localFolder.Path, logFileName)))
+            //if the log file is greater than 30mb, start a new log file
+            if (File.Exists(logFullPath))
             {
-                var logFile = await localFolder.GetFileAsync(logFileName);
-                var logProperties = await logFile.GetBasicPropertiesAsync();
-                logSize = logProperties.Size;
+                var logSize = new FileInfo(logFullPath).Length;
+                if (logSize > 30000000)
+                {
+                    File.WriteAllText(logFullPath, string.Empty);
+                }
             }
 
-            //if the log file is greater than 30mb, create a new log file
-            if (logSize > 30000000)
-                currentLogPath = await localFolder.CreateFileAsync(logFileName,
-                    CreationCollisionOption.ReplaceExisting);
-            else
-                currentLogPath = await localFolder.CreateFileAsync(logFileName,
-                    CreationCollisionOption.OpenIfExists);
+            currentLogPath = logFullPath;
 
             return;
         }
@@ -215,7 +205,7 @@ public sealed partial class MainWindow : WindowEx
             if (currentLogPath != null)
             {
                 var logMessage = DateTime.Now.ToString() + ": " + message + "\n";
-                File.AppendAllText(currentLogPath.Path, logMessage);
+                File.AppendAllText(currentLogPath, logMessage);
             }
         }
         catch

@@ -1,3 +1,4 @@
+using barcodrod.io.Helpers;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -61,6 +62,7 @@ public partial class DecodePage : Page
     private FilterInfoCollection? _directShowVideoDevices;
     private VideoCaptureDevice? _directShowVideoDevice;
     private int _isProcessingDirectShowFrame;
+    private Task? _cameraInitializationTask;
 
     private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -76,7 +78,7 @@ public partial class DecodePage : Page
         InitializeLog();
         LoadPasteToDecodeSetting();
 
-        _ = InitializeCameraBackendAsync();
+        _cameraInitializationTask = InitializeCameraBackendAsync();
 
         reader.Options.TryHarder = true;
         reader.Options.TryInverted = true;
@@ -120,7 +122,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
             if (!File.Exists(settingsFilePath))
             {
@@ -148,7 +150,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            localFolder = ApplicationData.Current.LocalFolder;
+            localFolder = (await AppPaths.GetLocalFolderAsync());
 
             //create log file based on current date and time
             var logFileName = "log.txt";
@@ -250,7 +252,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             if (!File.Exists(settingsFilePath)) return;
@@ -392,7 +394,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             if (!File.Exists(settingsFilePath)) return;
@@ -421,7 +423,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             if (!File.Exists(settingsFilePath)) return;
@@ -488,6 +490,10 @@ public partial class DecodePage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        if (_cameraInitializationTask != null)
+        {
+            try { await _cameraInitializationTask; } catch { }
+        }
         await LoadWebcamSettings();
 
         if (_hasProcessedLaunchArgument)
@@ -531,7 +537,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             JObject settings;
@@ -546,6 +552,7 @@ public partial class DecodePage : Page
             }
 
             settings["WebcamSourceIndex"] = comboBox1.SelectedIndex;
+            settings["WebcamSourceName"] = comboBox1.SelectedItem?.ToString();
             File.WriteAllText(settingsFilePath, settings.ToString(Formatting.Indented));
         }
         catch
@@ -553,31 +560,81 @@ public partial class DecodePage : Page
         }
     }
 
+    /// <summary>
+    /// Restores the previously selected webcam source, falling back to the first available source
+    /// when nothing can be restored.
+    /// </summary>
+    /// <remarks>
+    /// Selecting a source raises <see cref="DirectShowSourceChanged"/>, which is what enables the
+    /// webcam button. Without a guaranteed selection the button stays disabled after launch on the
+    /// default (MediaCapture) backend — that is issue #36, which regressed the behaviour added in
+    /// #27. The fallback must therefore run on every failure path: missing settings file, empty or
+    /// malformed JSON, or a saved source that no longer exists.
+    /// </remarks>
     private async Task LoadWebcamSettings()
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
-            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+            if (comboBox1.Items.Count == 0) return;
 
-            if (!File.Exists(settingsFilePath)) return;
+            if (await TryRestoreSavedWebcamSourceAsync()) return;
 
-            var json = await File.ReadAllTextAsync(settingsFilePath);
-            if (string.IsNullOrEmpty(json)) return;
-
-            var settings = JObject.Parse(json);
-            var savedIndex = settings["WebcamSourceIndex"];
-            if (savedIndex == null) return;
-
-            var index = savedIndex.Value<int>();
-            if (index >= 0 && index < comboBox1.Items.Count)
-            {
-                comboBox1.SelectedIndex = index;
-            }
+            if (comboBox1.SelectedIndex < 0)
+                comboBox1.SelectedIndex = 0;
         }
         catch
         {
         }
+    }
+
+    /// <summary>
+    /// Attempts to reselect the webcam source recorded in settings.json.
+    /// </summary>
+    /// <returns><c>true</c> if a saved source was found and selected; otherwise <c>false</c>.</returns>
+    private async Task<bool> TryRestoreSavedWebcamSourceAsync()
+    {
+        try
+        {
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
+            var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
+
+            if (!File.Exists(settingsFilePath)) return false;
+
+            var json = await File.ReadAllTextAsync(settingsFilePath);
+            if (string.IsNullOrWhiteSpace(json)) return false;
+
+            var settings = JObject.Parse(json);
+
+            var savedName = settings["WebcamSourceName"]?.Value<string>();
+            if (!string.IsNullOrEmpty(savedName))
+            {
+                for (var i = 0; i < comboBox1.Items.Count; i++)
+                {
+                    if (string.Equals(comboBox1.Items[i]?.ToString(), savedName, StringComparison.Ordinal))
+                    {
+                        comboBox1.SelectedIndex = i;
+                        return true;
+                    }
+                }
+            }
+
+            var savedIndex = settings["WebcamSourceIndex"];
+            if (savedIndex != null)
+            {
+                var index = savedIndex.Value<int>();
+                if (index >= 0 && index < comboBox1.Items.Count)
+                {
+                    comboBox1.SelectedIndex = index;
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("Could not restore the saved webcam source: " + ex.Message);
+        }
+
+        return false;
     }
 
     private async void DirectShowSourceChanged(object sender, RoutedEventArgs e)
@@ -1283,7 +1340,7 @@ public partial class DecodePage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             //get the history folder
@@ -1327,7 +1384,7 @@ public partial class DecodePage : Page
             else
             {
                 //create folder called history if it doesn't exist
-                var localFolder = ApplicationData.Current.LocalFolder;
+                var localFolder = (await AppPaths.GetLocalFolderAsync());
                 var historyFolder =
                     await localFolder.CreateFolderAsync("History", CreationCollisionOption.OpenIfExists);
 
@@ -1791,7 +1848,7 @@ public partial class DecodePage : Page
     {
         if (lastDecoded != null)
         {
-            var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png",
+            var file = await (await AppPaths.GetLocalFolderAsync()).CreateFileAsync("temp.png",
                 CreationCollisionOption.ReplaceExisting);
             lastDecoded.Save(file.Path, ImageFormat.Png);
             var dataPackage = new DataPackage();
@@ -1835,11 +1892,11 @@ public partial class DecodePage : Page
 
         InitializeWithWindow.Initialize(picker, hwnd);
         var path = await picker.PickSaveFileAsync();
-        var tempCSVExists = await ApplicationData.Current.LocalFolder.TryGetItemAsync("temp.csv");
+        var tempCSVExists = await (await AppPaths.GetLocalFolderAsync()).TryGetItemAsync("temp.csv");
 
         if (path != null && tempCSVExists != null)
         {
-            var csv = await ApplicationData.Current.LocalFolder.GetFileAsync("temp.csv");
+            var csv = await (await AppPaths.GetLocalFolderAsync()).GetFileAsync("temp.csv");
             await csv.CopyAndReplaceAsync(path);
             await csv.DeleteAsync();
 
@@ -1977,7 +2034,7 @@ public partial class DecodePage : Page
         var result = string.Empty;
         var ScanResult = string.Empty;
 
-        var csv = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.csv",
+        var csv = await (await AppPaths.GetLocalFolderAsync()).CreateFileAsync("temp.csv",
             CreationCollisionOption.ReplaceExisting);
         var csvPath = csv.Path;
 
@@ -2090,11 +2147,11 @@ public partial class DecodePage : Page
         ImageFolderButton.IsEnabled = true;
 
 
-        var tempCSVExists = await ApplicationData.Current.LocalFolder.TryGetItemAsync("temp.csv");
+        var tempCSVExists = await (await AppPaths.GetLocalFolderAsync()).TryGetItemAsync("temp.csv");
 
         if (tempCSVExists != null)
         {
-            var csv = await ApplicationData.Current.LocalFolder.GetFileAsync("temp.csv");
+            var csv = await (await AppPaths.GetLocalFolderAsync()).GetFileAsync("temp.csv");
             await csv.DeleteAsync();
         }
     }

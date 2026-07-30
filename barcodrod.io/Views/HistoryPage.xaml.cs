@@ -1,4 +1,5 @@
-﻿using Microsoft.UI;
+using barcodrod.io.Helpers;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -48,7 +49,7 @@ public sealed partial class HistoryPage : Page
         var imageFolder = await savePath.CreateFolderAsync("Barcodes" + "." + timestamp);
         var textFolder = await savePath.CreateFolderAsync("Text" + "." + timestamp);
 
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var historyFolder = await localFolder.GetFolderAsync("History");
         if (historyFolder != null)
         {
@@ -123,7 +124,7 @@ public sealed partial class HistoryPage : Page
         var imageFolder = await savePath.CreateFolderAsync("Barcodes" + "." + timestamp);
 
 
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var historyFolder = await localFolder.GetFolderAsync("History");
         if (historyFolder != null)
         {
@@ -183,7 +184,7 @@ public sealed partial class HistoryPage : Page
         //create two folders, one for the images and one for the text files
         var textFolder = await savePath.CreateFolderAsync("Text" + "." + timestamp);
 
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var historyFolder = await localFolder.GetFolderAsync("History");
         if (historyFolder != null)
         {
@@ -247,7 +248,7 @@ public sealed partial class HistoryPage : Page
 
         if (selectedItems.Count == 0) return;
 
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var historyFolder = await localFolder.GetFolderAsync("History");
         if (historyFolder != null)
         {
@@ -349,7 +350,7 @@ public sealed partial class HistoryPage : Page
 
         if (isHistoryEnabled == true)
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var historyFolder = await localFolder.GetFolderAsync("History");
 
             if (historyFolder != null)
@@ -577,7 +578,7 @@ public sealed partial class HistoryPage : Page
 
     private async Task<bool> IsHistoryEnabled()
     {
-        var localFolder = ApplicationData.Current.LocalFolder;
+        var localFolder = (await AppPaths.GetLocalFolderAsync());
         var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
         try
         {
@@ -604,7 +605,7 @@ public sealed partial class HistoryPage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
             if (!File.Exists(settingsFilePath))
             {
@@ -642,7 +643,7 @@ public sealed partial class HistoryPage : Page
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
             JObject settings;

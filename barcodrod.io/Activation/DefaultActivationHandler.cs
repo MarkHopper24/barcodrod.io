@@ -1,4 +1,5 @@
-﻿using barcodrod.io.Contracts.Services;
+using barcodrod.io.Helpers;
+using barcodrod.io.Contracts.Services;
 
 using Microsoft.UI.Xaml;
 using Newtonsoft.Json.Linq;
@@ -33,7 +34,7 @@ public class DefaultActivationHandler : ActivationHandler<Microsoft.UI.Xaml.Laun
     {
         try
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
             if (!File.Exists(settingsFilePath))
                 return "barcodrod.io.ViewModels.DecodeViewModel";

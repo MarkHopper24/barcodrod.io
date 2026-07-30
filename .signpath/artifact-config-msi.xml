@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SignPath artifact configuration for the barcodrod.io MSI.
+
+  IMPORTANT: actions/upload-artifact always packs the uploaded file(s) into a ZIP, so the artifact
+  SignPath receives is a ZIP that contains the .msi. The configuration root must therefore be a
+  <zip-file> wrapping the <msi-file> (per SignPath's GitHub Actions guidance). It deep-signs the
+  first-party binaries and Authenticode-signs the MSI package itself, which is what Windows /
+  SmartScreen verifies when a user runs the installer (the goal of issue #25).
+
+  In the SignPath portal, the artifact configuration (slug 'deep-sign', pointed at by the
+  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG repository variable) must use this exact XML
+  (Project -> Artifact Configurations -> select 'deep-sign' -> Edit -> paste). Editing this file
+  alone changes NOTHING: the portal configuration is the source of truth at signing time.
+
+  Foundation program compliance (https://signpath.org - Foundation terms):
+    * "All signed binaries must have metadata attributes set and enforced using file metadata
+      restrictions" -> hence the product-name / product-version restrictions below.
+    * "The team must only sign software artifacts built from their own source code", while
+      "You may include unsigned binaries of upstream OSS projects, e.g. DLL files, in your signed
+      packages" -> hence ONLY barcodrod.io.exe and barcodrod.io.dll are deep-signed. The bundled
+      .NET runtime, Windows App SDK, ZXing.Net and AForge.NET binaries are shipped as-is, unsigned.
+
+  The ${version} parameter is supplied by the sign-msi step in .github/workflows/release.yml and
+  must match the PE ProductVersion stamped by installer/build-msi.ps1 (-p:InformationalVersion) and
+  the MSI subject built from installer/barcodrod.io.wxs. Validate against a real MSI sample via
+  the portal's "Update from an artifact sample" before the first production signing run.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <msi-file path="*.msi" subject="barcodrod.io ${version} installer" author="Mark Hopper">
+      <pe-file-set product-name="barcodrod.io" product-version="${version}">
+        <!--
+          The '**/' prefix is REQUIRED. WiX installs into ProgramFiles64Folder\barcodrod.io, so
+          inside the MSI these binaries are nested three directory levels deep
+          (verified against a real MSI: SourceDir/PFiles64/barcodrod.io/barcodrod.io.exe) rather
+          than sitting at the package root. A bare 'barcodrod.io.exe' matches 0 items and the
+          signing request fails with "Expected path to match exactly 1 item, but found 0".
+          min-matches/max-matches both default to 1, so these still assert exactly one match each -
+          the localized satellite assemblies are named barcodrod.io.resources.dll and do not collide.
+        -->
+        <include path="**/barcodrod.io.exe" />
+        <include path="**/barcodrod.io.dll" />
+        <for-each>
+          <authenticode-sign />
+        </for-each>
+      </pe-file-set>
+      <authenticode-sign />
+    </msi-file>
+  </zip-file>
+</artifact-configuration>

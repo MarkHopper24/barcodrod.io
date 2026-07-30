@@ -1,0 +1,318 @@
+name: build-and-sign-msi
+
+# Builds the classic (unpackaged) barcodrod.io MSI for x64 and arm64 and code-signs it via SignPath.
+#
+#   pull_request            -> build only (validates the installer builds)
+#   workflow_dispatch       -> build + SignPath test-signing (validate the signing pipeline)
+#     with production-preflight=true
+#                           -> build + SignPath *release-signing* against the production certificate,
+#                              WITHOUT creating any GitHub Release. Use this to prove the production
+#                              cert + artifact configuration work before cutting a tag. Never
+#                              repoint the test-signing policy at the production certificate.
+#   push tag 'v*'           -> build + SignPath release-signing + DRAFT GitHub Release with checksums
+#
+# The Microsoft Store continues to sign and distribute the MSIX; this workflow only produces the
+# offline-installable, SignPath-signed MSI (see issue #25).
+#
+# Required GitHub configuration (Settings -> Secrets and variables -> Actions):
+#   Secret    SIGNPATH_API_TOKEN                          - SignPath API token (submitter role)
+#   Variable  SIGNPATH_ORGANIZATION_ID                    - SignPath organization id (GUID)
+#   Variable  SIGNPATH_PROJECT_SLUG                       - SignPath project slug
+#   Variable  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG    - artifact configuration slug ('deep-sign')
+#
+# The SignPath project must also contain signing policies named 'test-signing' and
+# 'release-signing', and an artifact configuration named per the variable above
+# (see .signpath/artifact-config-msi.xml). Also recommended: install the SignPath GitHub App.
+#
+# NOTE: the artifact configuration that actually runs lives in the SignPath portal. The XML in
+# .signpath/ is documentation/source-of-record only - keep them in sync by hand.
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      production-preflight:
+        description: 'Sign with the production release-signing policy (no GitHub Release is created)'
+        type: boolean
+        default: false
+      preflight-version:
+        description: 'Version to stamp for a preflight build, e.g. 2.1.0.0 (blank = 0.0.0.<run>)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  WIX_VERSION: '5.0.2'
+  # Test policy for ordinary dispatch validation; the release (manual-approval) policy for version
+  # tags and for an explicit production preflight.
+  SIGNPATH_SIGNING_POLICY: ${{ (startsWith(github.ref, 'refs/tags/v') || inputs.production-preflight) && 'release-signing' || 'test-signing' }}
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Derive version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $v = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          } elseif ('${{ inputs.preflight-version }}') {
+            $v = '${{ inputs.preflight-version }}'
+          } else {
+            $v = "0.0.0.$($env:GITHUB_RUN_NUMBER)"
+          }
+          $parts = @($v.Split('.'))
+          while ($parts.Count -lt 4) { $parts += '0' }
+          $v = ($parts[0..3] -join '.')
+          "version=$v" | Out-File $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved version: $v"
+
+      - name: Install WiX ${{ env.WIX_VERSION }}
+        run: dotnet tool install --global wix --version ${{ env.WIX_VERSION }}
+
+      - name: Build MSI (${{ matrix.arch }})
+        shell: pwsh
+        run: ./installer/build-msi.ps1 -Version ${{ steps.ver.outputs.version }} -Architecture ${{ matrix.arch }}
+
+      # Fail the build BEFORE burning a SignPath signing request if the metadata the artifact
+      # configuration enforces (product-name / product-version on the PEs, subject/author on the
+      # MSI) does not match what we are about to claim. A mismatch here would otherwise surface as
+      # a rejected signing request, or - worse - a release whose version metadata disagrees.
+      - name: Verify signing metadata (${{ matrix.arch }})
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '${{ steps.ver.outputs.version }}'
+          $publish = "artifacts/publish/${{ matrix.arch }}"
+          $failures = @()
+
+          foreach ($name in 'barcodrod.io.exe', 'barcodrod.io.dll') {
+            $path = Join-Path $publish $name
+            if (-not (Test-Path $path)) { $failures += "MISSING: $path"; continue }
+            $info = (Get-Item $path).VersionInfo
+            if ($info.ProductName -ne 'barcodrod.io') {
+              $failures += "$name ProductName = '$($info.ProductName)' (expected 'barcodrod.io')"
+            }
+            if ($info.ProductVersion -ne $version) {
+              $failures += "$name ProductVersion = '$($info.ProductVersion)' (expected '$version')"
+            }
+            if ($info.FileVersion -ne $version) {
+              $failures += "$name FileVersion = '$($info.FileVersion)' (expected '$version')"
+            }
+            Write-Host "$name -> ProductName='$($info.ProductName)' ProductVersion='$($info.ProductVersion)' FileVersion='$($info.FileVersion)'"
+          }
+
+          $msi = Get-ChildItem "artifacts/msi/barcodrod.io-$version-${{ matrix.arch }}.msi"
+          $installer = New-Object -ComObject WindowsInstaller.Installer
+          $db = $installer.GetType().InvokeMember('OpenDatabase', 'InvokeMethod', $null, $installer, @($msi.FullName, 0))
+          function Get-MsiProperty($db, $name) {
+            $view = $db.GetType().InvokeMember('OpenView', 'InvokeMethod', $null, $db, @("SELECT Value FROM Property WHERE Property='$name'"))
+            $view.GetType().InvokeMember('Execute', 'InvokeMethod', $null, $view, $null) | Out-Null
+            $rec = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null)
+            if ($null -eq $rec) { return $null }
+            return $rec.GetType().InvokeMember('StringData', 'GetProperty', $null, $rec, 1)
+          }
+          $msiVersion = Get-MsiProperty $db 'ProductVersion'
+          $upgradeCode = Get-MsiProperty $db 'UpgradeCode'
+          Write-Host "MSI -> ProductVersion='$msiVersion' UpgradeCode='$upgradeCode'"
+
+          # Windows Installer only honours the first three fields of ProductVersion, but WiX writes
+          # through whatever we pass in, so accept either the full four-part version or its
+          # three-part truncation. Verified locally: WiX 5.0.2 emits '2.1.0.0' for -d Version=2.1.0.0.
+          $shortMsiVersion = ($version.Split('.')[0..2] -join '.')
+          if ($msiVersion -ne $version -and $msiVersion -ne $shortMsiVersion) {
+            $failures += "MSI ProductVersion = '$msiVersion' (expected '$version' or '$shortMsiVersion')"
+          }
+          if ($upgradeCode -ne '{ADE87DB3-A892-4FF5-AF98-FCE2D5372793}') {
+            $failures += "MSI UpgradeCode = '$upgradeCode' (unexpected - breaks in-place upgrades)"
+          }
+
+          # On a release tag the shipped Store manifest must agree with the tag.
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            [xml]$manifest = Get-Content 'barcodrod.io/Package.appxmanifest'
+            $manifestVersion = $manifest.Package.Identity.Version
+            Write-Host "Package.appxmanifest -> Version='$manifestVersion'"
+            if ($manifestVersion -ne $version) {
+              $failures += "Package.appxmanifest Version = '$manifestVersion' (expected '$version' from the tag)"
+            }
+          }
+
+          if ($failures) {
+            Write-Host "::error::Signing metadata verification failed"
+            $failures | ForEach-Object { Write-Host "::error::$_" }
+            exit 1
+          }
+          Write-Host "All signing metadata checks passed."
+
+      - name: Upload unsigned MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-unsigned-${{ matrix.arch }}
+          path: artifacts/msi/barcodrod.io-*-${{ matrix.arch }}.msi
+          if-no-files-found: error
+
+  sign-msi:
+    # Sign on version tags (release) and on manual dispatch (test). PR builds are validate-only and
+    # do not have access to the signing secret (e.g. fork PRs), so they are intentionally excluded.
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: build-msi
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Download unsigned MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-unsigned-${{ matrix.arch }}
+          path: unsigned
+
+      - name: Re-upload artifact for signing
+        id: tosign
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-tosign-${{ matrix.arch }}
+          path: unsigned/*.msi
+          if-no-files-found: error
+
+      - name: Submit signing request to SignPath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.tosign.outputs.artifact-id }}
+          wait-for-completion: true
+          # The Foundation program requires manual approval of every release signing request, which
+          # can easily exceed the action's 30 minute default.
+          wait-for-completion-timeout-in-seconds: '7200'
+          # The artifact configuration declares a required 'version' parameter and enforces it as PE
+          # product-version metadata. Values must be valid JSON strings, hence the quotes.
+          parameters: |
+            version: "${{ needs.build-msi.outputs.version }}"
+          output-artifact-directory: signed
+
+      - name: Upload signed MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-signed-${{ matrix.arch }}
+          path: signed/**/*.msi
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: sign-msi
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      # Needed for the CHANGELOG section used as the release body.
+      - uses: actions/checkout@v4
+
+      - name: Download signed MSIs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: msi-signed-*
+          path: dist
+          merge-multiple: true
+
+      # Guard against a partial or duplicated signing matrix producing a malformed release.
+      - name: Verify release assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msis = @(Get-ChildItem dist -Recurse -Filter *.msi)
+          $msis | ForEach-Object { Write-Host "found: $($_.Name)" }
+          $x64 = @($msis | Where-Object { $_.Name -like '*-x64.msi' })
+          $arm64 = @($msis | Where-Object { $_.Name -like '*-arm64.msi' })
+          $failures = @()
+          if ($x64.Count -ne 1) { $failures += "expected exactly 1 x64 MSI, found $($x64.Count)" }
+          if ($arm64.Count -ne 1) { $failures += "expected exactly 1 arm64 MSI, found $($arm64.Count)" }
+          if ($msis.Count -ne 2) { $failures += "expected exactly 2 MSIs, found $($msis.Count)" }
+          foreach ($m in $msis) {
+            $sig = Get-AuthenticodeSignature $m.FullName
+            Write-Host "$($m.Name) -> signature status: $($sig.Status), signer: $($sig.SignerCertificate.Subject)"
+            if ($sig.Status -eq 'NotSigned') { $failures += "$($m.Name) is not signed" }
+          }
+          if ($failures) {
+            $failures | ForEach-Object { Write-Host "::error::$_" }
+            exit 1
+          }
+
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: |
+          $lines = Get-ChildItem dist -Recurse -Filter *.msi |
+            ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash, $_.Name }
+          $lines | Out-File dist/SHA256SUMS.txt -Encoding ascii
+          $lines | Write-Host
+
+      - name: Build release notes from CHANGELOG
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $lines = Get-Content CHANGELOG.md
+          $start = -1
+          for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match "^##\s+$([regex]::Escape($tag))\s*$") { $start = $i + 1; break }
+          }
+          if ($start -lt 0) {
+            Write-Host "::error::No '## $tag' section found in CHANGELOG.md"
+            exit 1
+          }
+          $end = $lines.Count
+          for ($i = $start; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match '^##\s+') { $end = $i; break }
+          }
+          if ($end -le $start) {
+            Write-Host "::error::The '## $tag' CHANGELOG section is empty"
+            exit 1
+          }
+          $body = $lines[$start..($end - 1)] -join "`n"
+          $body = $body.Trim()
+          if (-not $body) {
+            Write-Host "::error::The '## $tag' CHANGELOG section is empty"
+            exit 1
+          }
+          $body | Out-File release-notes.md -Encoding utf8
+          Write-Host $body
+
+      # Created as a DRAFT on purpose: asset uploads are not atomic, and the signed MSIs must be
+      # installed and smoke-tested on clean x64 and arm64 machines before anything is public.
+      # Publish manually (gh release edit <tag> --draft=false) once verified.
+      - name: Create draft GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem dist -Recurse -File | ForEach-Object { $_.FullName }
+          gh release create "$env:GITHUB_REF_NAME" $assets `
+            --title "$env:GITHUB_REF_NAME" `
+            --notes-file release-notes.md `
+            --verify-tag `
+            --draft
+          Write-Host "::notice::Draft release created. Smoke-test the signed MSIs, then publish with: gh release edit $env:GITHUB_REF_NAME --draft=false"

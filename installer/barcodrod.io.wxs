@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  barcodrod.io classic (unpackaged) MSI installer — WiX v5.
+  Maintainable by design:
+    * Files are auto-harvested from the publish output at build time via <Files Include="...\**">.
+      There is NO hand-maintained file list, so new/removed files are picked up automatically.
+    * Per-machine install into Program Files, Start Menu shortcut with an explicit AppUserModelID
+      (required for unpackaged WinApp SDK toast notifications), and automatic uninstall/ARP entry.
+
+  Build (values supplied by build-msi.ps1 / CI):
+    wix build installer\barcodrod.io.wxs -arch x64 ^
+      -d Version=<x.y.z.0> -d PublishDir=<path to publish output> -o <out>.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <?ifndef Version ?><?define Version = "0.0.0.0" ?><?endif?>
+  <?ifndef PublishDir ?><?define PublishDir = "..\artifacts\publish\x64" ?><?endif?>
+
+  <Package
+      Name="barcodrod.io"
+      Manufacturer="Mark Hopper"
+      Version="$(Version)"
+      UpgradeCode="ADE87DB3-A892-4FF5-AF98-FCE2D5372793"
+      Scope="perMachine"
+      Compressed="yes">
+
+    <SummaryInformation
+        Manufacturer="Mark Hopper"
+        Description="barcodrod.io $(Version) installer" />
+
+    <!--
+      Clean in-place upgrades; block downgrades.
+      AllowSameVersionUpgrades is required because x64 and arm64 get different ProductCodes while
+      sharing this UpgradeCode and version. Without it, Windows Installer treats them as unrelated
+      products and both install into the same folder (and a same-version rebuild would too).
+      It makes the upgrade version range max-inclusive, which raises ICE61 under `wix msi validate`;
+      `wix build` (WiX 5) does not run ICE validation, so no suppression is needed here.
+    -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of barcodrod.io is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Application icon for Add/Remove Programs, sourced from the published exe. -->
+    <Icon Id="AppIcon" SourceFile="$(PublishDir)\barcodrod.io.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://barcodrod.io" />
+
+    <!-- Install layout -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="barcodrod.io" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppShortcutFolder" Name="barcodrod.io" />
+    </StandardDirectory>
+
+    <!--
+      Auto-harvest every published file into INSTALLFOLDER.
+      Excludes the debug symbols (.pdb) which are not needed at runtime.
+    -->
+    <ComponentGroup Id="PublishedFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(PublishDir)\**">
+        <Exclude Files="$(PublishDir)\**\*.pdb" />
+      </Files>
+    </ComponentGroup>
+
+    <!-- Start Menu shortcut + uninstall registration. -->
+    <DirectoryRef Id="AppShortcutFolder">
+      <Component Id="ApplicationShortcut" Guid="*">
+        <Shortcut Id="AppStartMenuShortcut"
+                  Name="barcodrod.io"
+                  Description="A free, modern barcode and QR code toolkit for Windows."
+                  Target="[INSTALLFOLDER]barcodrod.io.exe"
+                  WorkingDirectory="INSTALLFOLDER">
+          <!-- Stable AppUserModelID + toast activator CLSID so unpackaged toast notifications
+               resolve to this shortcut, 1:1 with the MSIX manifest's toastNotificationActivation. -->
+          <ShortcutProperty Key="System.AppUserModel.ID" Value="barcodrod.io" />
+          <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{DD6D181A-17B6-4A3A-9E66-B9399E0F1184}" />
+        </Shortcut>
+        <RemoveFolder Id="RemoveAppShortcutFolder" On="uninstall" />
+        <!-- HKLM, not HKCU: this is a perMachine package, so a per-user keypath would make the
+             component's installed state user-specific and break repair/uninstall from another
+             account (ICE38/ICE43). -->
+        <RegistryValue Root="HKLM"
+                       Key="Software\barcodrod.io\Installed"
+                       Name="StartMenuShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!--
+      File type associations — 1:1 with the MSIX manifest's "image" fileTypeAssociation.
+      Registers a ProgID and advertises barcodrod.io in the "Open with" list for each image type
+      (non-destructive: it does not seize the existing default association). The app opens the file
+      passed on the command line (see App.GetFilePathFromCommandLine).
+    -->
+    <Component Id="FileAssociations" Directory="INSTALLFOLDER" Guid="*">
+      <RegistryKey Root="HKCR" Key="barcodrod.io.image">
+        <RegistryValue Type="string" Value="barcodrod.io Image" KeyPath="yes" />
+        <RegistryValue Name="FriendlyTypeName" Type="string" Value="barcodrod.io Image" />
+        <RegistryKey Key="DefaultIcon">
+          <RegistryValue Type="string" Value="[INSTALLFOLDER]barcodrod.io.exe,0" />
+        </RegistryKey>
+        <RegistryKey Key="shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]barcodrod.io.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </RegistryKey>
+
+      <RegistryKey Root="HKCR" Key="Applications\barcodrod.io.exe">
+        <RegistryValue Name="FriendlyAppName" Type="string" Value="barcodrod.io" />
+        <RegistryKey Key="shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]barcodrod.io.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+        <RegistryKey Key="SupportedTypes">
+          <RegistryValue Name=".jpg" Type="string" Value="" />
+          <RegistryValue Name=".jpeg" Type="string" Value="" />
+          <RegistryValue Name=".png" Type="string" Value="" />
+          <RegistryValue Name=".bmp" Type="string" Value="" />
+          <RegistryValue Name=".gif" Type="string" Value="" />
+          <RegistryValue Name=".tif" Type="string" Value="" />
+          <RegistryValue Name=".tiff" Type="string" Value="" />
+          <RegistryValue Name=".webp" Type="string" Value="" />
+          <RegistryValue Name=".heif" Type="string" Value="" />
+          <RegistryValue Name=".heic" Type="string" Value="" />
+          <RegistryValue Name=".jfif" Type="string" Value="" />
+          <RegistryValue Name=".ico" Type="string" Value="" />
+          <RegistryValue Name=".svg" Type="string" Value="" />
+          <RegistryValue Name=".jp2" Type="string" Value="" />
+        </RegistryKey>
+      </RegistryKey>
+
+      <RegistryValue Root="HKCR" Key=".jpg\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".jpeg\OpenWithProgids" Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".png\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".bmp\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".gif\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".tif\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".tiff\OpenWithProgids" Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".webp\OpenWithProgids" Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".heif\OpenWithProgids" Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".heic\OpenWithProgids" Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".jfif\OpenWithProgids" Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".ico\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".svg\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+      <RegistryValue Root="HKCR" Key=".jp2\OpenWithProgids"  Name="barcodrod.io.image" Type="string" Value="" />
+    </Component>
+
+    <!--
+      Toast notification COM activator — 1:1 with the MSIX manifest's windows.comServer ExeServer
+      (CLSID DD6D181A-17B6-4A3A-9E66-B9399E0F1184). Lets Windows launch the app to handle toast
+      activations via the Windows App SDK AppNotificationActivated argument.
+    -->
+    <Component Id="ToastActivator" Directory="INSTALLFOLDER" Guid="*">
+      <RegistryKey Root="HKCR" Key="CLSID\{DD6D181A-17B6-4A3A-9E66-B9399E0F1184}">
+        <RegistryValue Type="string" Value="Toast activator" KeyPath="yes" />
+        <RegistryKey Key="LocalServer32">
+          <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]barcodrod.io.exe&quot; ----AppNotificationActivated:" />
+        </RegistryKey>
+      </RegistryKey>
+    </Component>
+
+    <!-- Single feature containing the harvested files, shortcut and OS integrations. -->
+    <Feature Id="Main" Title="barcodrod.io" Level="1">
+      <ComponentGroupRef Id="PublishedFiles" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="FileAssociations" />
+      <ComponentRef Id="ToastActivator" />
+    </Feature>
+
+  </Package>
+</Wix>

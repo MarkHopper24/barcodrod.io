@@ -31,14 +31,16 @@ Method 1: Directly from the Microsoft Store [HERE](https://www.microsoft.com/sto
 
 Method 2: Downloading and installing the MSIX package directly from the latest GitHub release [HERE](https://github.com/MarkHopper24/barcodrod.io/releases/latest) 
 
-Method 3: From Windows Package Manager using winget via command line
+Method 3: Downloading and running the standalone **MSI installer** from the latest GitHub release [HERE](https://github.com/MarkHopper24/barcodrod.io/releases/latest). This is a classic, fully offline installer (x64 and arm64) that does not require the Microsoft Store, winget, or an internet connection. It is code-signed via the [SignPath Foundation](https://signpath.org) (see the Code signing policy below) and is the recommended option for offline or locked-down environments.
+
+Method 4: From Windows Package Manager using winget via command line
 ```
 winget install --name barcodrod.io
 ```
 
-For now, barcodrod.io requires an internet connection on installation  for license acquisition through the Microsoft Store (this includes the build hosted in this repository). After first installation, it can be used fully offline. It is a planned roadmap item to implement an fully offline installation method.
+The Microsoft Store and MSIX install paths (Methods 1, 2 and 4) require an internet connection on first installation for license acquisition through the Microsoft Store; after the first launch the app can be used fully offline. The standalone MSI installer (Method 3) does not have this requirement and installs completely offline.
 
-Method 4: Building the solution on your own in Visual Studio using the provided source code (this method does not require a network connection).
+Method 5: Building the solution on your own in Visual Studio using the provided source code (this method does not require a network connection).
 
 ## Usage
 Includes support for the following barcode formats:
@@ -107,6 +109,27 @@ This software would not have been possible without the the following tools, reso
 - [Template Studio for WinUI](https://marketplace.visualstudio.com/items?itemName=TemplateStudio.TemplateStudioForWinUICs)
 - [Windows Camera](https://apps.microsoft.com/store/detail/windows-camera/9WZDNCRFJBBG?) and [Snipping Tool](https://apps.microsoft.com/store/detail/snipping-tool/9MZ95KL8MR0L)
 - AForge.NET (DirectShow Library)
+
+## Code signing policy
+
+Free code signing for the standalone MSI installer published in this repository's
+[GitHub Releases](https://github.com/MarkHopper24/barcodrod.io/releases) is provided by
+[SignPath.io](https://about.signpath.io), with a certificate issued by the
+[SignPath Foundation](https://signpath.org).
+
+**Team roles**
+- **Authors & reviewers:** project maintainers — see the repository
+  [contributors](https://github.com/MarkHopper24/barcodrod.io/graphs/contributors).
+- **Approvers:** repository owner ([@MarkHopper24](https://github.com/MarkHopper24)). Every release
+  signing request is reviewed and approved manually.
+
+**Privacy**
+barcodrod.io processes barcodes and QR codes locally on your PC. This program will not transfer any
+information to other networked systems unless specifically requested by the user or the person
+installing or operating it. See the [Privacy Notes](#privacy-notes) above.
+
+> The Microsoft Store build is signed by Microsoft through the Store. The MSI installer in GitHub
+> Releases is signed via the SignPath Foundation and installs fully offline.
 
 ## License
 [Apache 2.0](https://github.com/MarkHopper24/barcodrod.io/blob/public/LICENSE.txt)

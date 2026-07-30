@@ -71,8 +71,18 @@ public partial class App : Application
 
     private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
-        // TODO: Log and handle exceptions as appropriate.
-        // https://docs.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.application.unhandledexception.
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "barcodrod.io");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "crash.log"),
+                $"{DateTime.Now:o}\t{e.Message}\n{e.Exception}\n\n");
+        }
+        catch
+        {
+            // Never let crash logging itself crash the app.
+        }
+
         // call e.Handled = true to prevent the app from closing when this method returns.
         e.Handled = true;
     }
@@ -92,6 +102,39 @@ public partial class App : Application
             }
         }
 
+        // Classic (unpackaged / MSI) file association passes the file as a command-line argument
+        // rather than via the File activation contract used by the packaged (MSIX) build.
+        var commandLineFilePath = GetFilePathFromCommandLine();
+        if (!string.IsNullOrWhiteSpace(commandLineFilePath))
+        {
+            await GetService<IActivationService>().ActivateAsync(commandLineFilePath);
+            return;
+        }
+
         await GetService<IActivationService>().ActivateAsync(args);
+    }
+
+    private static string? GetFilePathFromCommandLine()
+    {
+        var commandLineArgs = Environment.GetCommandLineArgs();
+
+        // Index 0 is the executable path. Skip Windows App SDK activation tokens (e.g. the
+        // "----AppNotificationActivated:" argument used by the toast COM activator) and return
+        // the first argument that resolves to an existing file.
+        for (var i = 1; i < commandLineArgs.Length; i++)
+        {
+            var arg = commandLineArgs[i];
+            if (string.IsNullOrWhiteSpace(arg) || arg.StartsWith("----"))
+            {
+                continue;
+            }
+
+            if (File.Exists(arg))
+            {
+                return arg;
+            }
+        }
+
+        return null;
     }
 }
