@@ -28,8 +28,16 @@
         Manufacturer="Mark Hopper"
         Description="barcodrod.io $(Version) installer" />
 
-    <!-- Clean in-place upgrades; block downgrades. -->
-    <MajorUpgrade DowngradeErrorMessage="A newer version of barcodrod.io is already installed." />
+    <!--
+      Clean in-place upgrades; block downgrades.
+      AllowSameVersionUpgrades is required because x64 and arm64 get different ProductCodes while
+      sharing this UpgradeCode and version. Without it, Windows Installer treats them as unrelated
+      products and both install into the same folder (and a same-version rebuild would too).
+      It makes the upgrade version range max-inclusive, which raises ICE61 under `wix msi validate`;
+      `wix build` (WiX 5) does not run ICE validation, so no suppression is needed here.
+    -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of barcodrod.io is already installed." />
 
     <MediaTemplate EmbedCab="yes" />
 
@@ -70,7 +78,10 @@
           <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{DD6D181A-17B6-4A3A-9E66-B9399E0F1184}" />
         </Shortcut>
         <RemoveFolder Id="RemoveAppShortcutFolder" On="uninstall" />
-        <RegistryValue Root="HKCU"
+        <!-- HKLM, not HKCU: this is a perMachine package, so a per-user keypath would make the
+             component's installed state user-specific and break repair/uninstall from another
+             account (ICE38/ICE43). -->
+        <RegistryValue Root="HKLM"
                        Key="Software\barcodrod.io\Installed"
                        Name="StartMenuShortcut"
                        Type="integer"
