@@ -560,21 +560,50 @@ public partial class DecodePage : Page
         }
     }
 
+    /// <summary>
+    /// Restores the previously selected webcam source, falling back to the first available source
+    /// when nothing can be restored.
+    /// </summary>
+    /// <remarks>
+    /// Selecting a source raises <see cref="DirectShowSourceChanged"/>, which is what enables the
+    /// webcam button. Without a guaranteed selection the button stays disabled after launch on the
+    /// default (MediaCapture) backend — that is issue #36, which regressed the behaviour added in
+    /// #27. The fallback must therefore run on every failure path: missing settings file, empty or
+    /// malformed JSON, or a saved source that no longer exists.
+    /// </remarks>
     private async Task LoadWebcamSettings()
+    {
+        try
+        {
+            if (comboBox1.Items.Count == 0) return;
+
+            if (await TryRestoreSavedWebcamSourceAsync()) return;
+
+            if (comboBox1.SelectedIndex < 0)
+                comboBox1.SelectedIndex = 0;
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
+    /// Attempts to reselect the webcam source recorded in settings.json.
+    /// </summary>
+    /// <returns><c>true</c> if a saved source was found and selected; otherwise <c>false</c>.</returns>
+    private async Task<bool> TryRestoreSavedWebcamSourceAsync()
     {
         try
         {
             var localFolder = (await AppPaths.GetLocalFolderAsync());
             var settingsFilePath = Path.Combine(localFolder.Path, "settings.json");
 
-            if (!File.Exists(settingsFilePath)) return;
+            if (!File.Exists(settingsFilePath)) return false;
 
             var json = await File.ReadAllTextAsync(settingsFilePath);
-            if (string.IsNullOrEmpty(json)) return;
+            if (string.IsNullOrWhiteSpace(json)) return false;
 
             var settings = JObject.Parse(json);
-
-            if (comboBox1.Items.Count == 0) return;
 
             var savedName = settings["WebcamSourceName"]?.Value<string>();
             if (!string.IsNullOrEmpty(savedName))
@@ -584,7 +613,7 @@ public partial class DecodePage : Page
                     if (string.Equals(comboBox1.Items[i]?.ToString(), savedName, StringComparison.Ordinal))
                     {
                         comboBox1.SelectedIndex = i;
-                        return;
+                        return true;
                     }
                 }
             }
@@ -596,16 +625,16 @@ public partial class DecodePage : Page
                 if (index >= 0 && index < comboBox1.Items.Count)
                 {
                     comboBox1.SelectedIndex = index;
-                    return;
+                    return true;
                 }
             }
-
-            if (comboBox1.SelectedIndex < 0)
-                comboBox1.SelectedIndex = 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Log("Could not restore the saved webcam source: " + ex.Message);
         }
+
+        return false;
     }
 
     private async void DirectShowSourceChanged(object sender, RoutedEventArgs e)
