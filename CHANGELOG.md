@@ -2,6 +2,17 @@
 
 ## v2.1
 
+### Added — Native Arm64 support
+
+- **barcodrod.io now ships a native Arm64 build.** Every download for this release is offered for
+  both **x64** and **Arm64**, so devices such as the Surface Pro / Surface Laptop (Snapdragon) and
+  other Windows on Arm PCs run barcodrod.io natively instead of through x64 emulation. That means
+  faster startup, quicker scanning and encoding, and lower battery use on those machines. The Arm64
+  build is a first-class release artifact: it is produced by the same CI pipeline and carries the
+  same code signature as the x64 build.
+- Note: the legacy AForge/DirectShow webcam pipeline remains x64-only. On Arm64 use the default
+  Windows MediaCapture webcam engine, which is fully supported.
+
 ### Added — CI/CD code signing (SignPath) for the MSI
 
 - **GitHub Actions release workflow** — Added `.github/workflows/release.yml`, which builds the MSI
