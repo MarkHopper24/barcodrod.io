@@ -33,8 +33,17 @@
   <zip-file>
     <msi-file path="*.msi" subject="barcodrod.io ${version} installer" author="Mark Hopper">
       <pe-file-set product-name="barcodrod.io" product-version="${version}">
-        <include path="barcodrod.io.exe" />
-        <include path="barcodrod.io.dll" />
+        <!--
+          The '**/' prefix is REQUIRED. WiX installs into ProgramFiles64Folder\barcodrod.io, so
+          inside the MSI these binaries are nested three directory levels deep
+          (verified against a real MSI: SourceDir/PFiles64/barcodrod.io/barcodrod.io.exe) rather
+          than sitting at the package root. A bare 'barcodrod.io.exe' matches 0 items and the
+          signing request fails with "Expected path to match exactly 1 item, but found 0".
+          min-matches/max-matches both default to 1, so these still assert exactly one match each -
+          the localized satellite assemblies are named barcodrod.io.resources.dll and do not collide.
+        -->
+        <include path="**/barcodrod.io.exe" />
+        <include path="**/barcodrod.io.dll" />
         <for-each>
           <authenticode-sign />
         </for-each>
