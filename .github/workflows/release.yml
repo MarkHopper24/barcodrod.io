@@ -18,7 +18,7 @@ name: build-and-sign-msi
 #   Secret    SIGNPATH_API_TOKEN                          - SignPath API token (submitter role)
 #   Variable  SIGNPATH_ORGANIZATION_ID                    - SignPath organization id (GUID)
 #   Variable  SIGNPATH_PROJECT_SLUG                       - SignPath project slug
-#   Variable  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG    - artifact configuration slug (e.g. 'msi')
+#   Variable  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG    - artifact configuration slug ('deep-sign')
 #
 # The SignPath project must also contain signing policies named 'test-signing' and
 # 'release-signing', and an artifact configuration named per the variable above

@@ -8,8 +8,9 @@
   first-party binaries and Authenticode-signs the MSI package itself, which is what Windows /
   SmartScreen verifies when a user runs the installer (the goal of issue #25).
 
-  In the SignPath portal, the artifact configuration (slug 'msi-github') must use this exact XML
-  (Project -> Artifact Configurations -> select 'msi-github' -> Edit -> paste). Editing this file
+  In the SignPath portal, the artifact configuration (slug 'deep-sign', pointed at by the
+  SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG repository variable) must use this exact XML
+  (Project -> Artifact Configurations -> select 'deep-sign' -> Edit -> paste). Editing this file
   alone changes NOTHING: the portal configuration is the source of truth at signing time.
 
   Foundation program compliance (https://signpath.org - Foundation terms):
