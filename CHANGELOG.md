@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v2.1
 
 ### Added — CI/CD code signing (SignPath) for the MSI
 
@@ -56,6 +56,20 @@
 - **Unhandled exceptions are now logged** — `App.App_UnhandledException` writes to
   `%LOCALAPPDATA%\barcodrod.io\crash.log` instead of silently swallowing exceptions (`e.Handled` is
   still set to keep prior behaviour). This surfaced the unpackaged startup failures above.
+
+### Bug Fixes — Webcam
+
+- **Fixed the webcam button being disabled on launch (#36)** — On the default (Windows Camera /
+  MediaCapture) backend the camera source dropdown was populated but never given a selection, and
+  the webcam button is only enabled in response to a selection change. `LoadWebcamSettings` was
+  meant to restore the previous source, but it returned early when `settings.json` was missing or
+  empty, skipping the "select the first source" fallback at the end of the method. On a fresh
+  install the button therefore stayed greyed out. Source restoration is now separated from the
+  fallback (`TryRestoreSavedWebcamSourceAsync`), so a default source is always selected when nothing
+  can be restored — including missing, empty, or malformed settings, or a saved camera that is no
+  longer present. This restores the behaviour added in #27.
+
+## v2.0
 
 ### Bug Fixes
 
