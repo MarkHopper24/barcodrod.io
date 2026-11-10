@@ -30,6 +30,7 @@
                             <x:String>Decode</x:String>
                             <x:String>Encode</x:String>
                             <x:String>History</x:String>
+                            <x:String>Inventory</x:String>
                         </ComboBox>
                     </StackPanel>
                 </StackPanel>

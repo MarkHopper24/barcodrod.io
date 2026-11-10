@@ -48,6 +48,7 @@ public class DefaultActivationHandler : ActivationHandler<Microsoft.UI.Xaml.Laun
 
             if (configuredPage == "barcodrod.io.ViewModels.EncodeViewModel" ||
                 configuredPage == "barcodrod.io.ViewModels.HistoryViewModel" ||
+                configuredPage == "barcodrod.io.ViewModels.InventoryViewModel" ||
                 configuredPage == "barcodrod.io.ViewModels.DecodeViewModel")
             {
                 return configuredPage;

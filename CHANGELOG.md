@@ -1,5 +1,30 @@
 # Changelog
 
+## v2.2.0-experimental.1
+
+This experimental build adds an Inventory workspace alongside Read, Create, and History. It supports personal belongings, collections, equipment, supplies, and business inventory.
+
+### Added
+
+- Add items with a name, generated item ID, quantity, and location. Optional sections cover barcodes, reservations, quantity targets, value/sourcing, notes, and custom fields.
+- Look up registered item IDs/barcodes, or add/remove a configured quantity on each scan. Quantity changes retain a reference and activity history.
+- Link an `.xlsx` workbook, save changes, sync edits in both directions, and open a record in desktop Excel. File-based integration works without Excel installed; conflicting edits stop sync for review.
+- Import and export Excel/CSV/TSV with column mapping. Select multiple items for labels, export, or archive/restore. Back up and restore the complete inventory.
+- Print labels from Inventory, Create, or History. Includes Avery and thermal presets, custom dimensions, copies and quantity modes, payload templates, calibration offsets, previews, and PDF output.
+
+### Fixed
+
+- Simplified item forms and quantity actions, retained batch selections through refreshes, and preserved exact decimal values when editing unrelated fields.
+- Kept item details and activity accessible in compact windows and when scan/Excel tools are expanded.
+- Fixed keyboard/accessibility activation of Read/Create/History buttons, file-dialog ownership, and cropped barcode previews.
+
+### Validation and limits
+
+- 32 inventory tests and 23 desktop workflow checks passed locally. The release pipeline builds and signs x64 and Arm64 MSIs.
+- Scan actions accept keyboard-style scanner input or pasted codes followed by Enter. Read-tab camera/image decoding does not automatically change inventory quantities.
+- Desktop Excel navigation, physical scanner/printer use, camera hardware, and native Arm64 execution have not been validated for this preview.
+- These MSIs use the existing installer identity and upgrade an installed classic MSI edition. Back up your inventory before trying the experimental build. Test data is not preloaded.
+
 ## v2.1
 
 ### Added — Native Arm64 support

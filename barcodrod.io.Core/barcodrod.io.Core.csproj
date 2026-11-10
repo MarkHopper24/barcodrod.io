@@ -5,6 +5,7 @@
     <Platforms>AnyCPU;x64;x86</Platforms>
     <Platforms>x86;x64;arm64;AnyCPU</Platforms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <Configurations>Debug;Release;RELEASE1</Configurations>
   </PropertyGroup>
 
@@ -13,6 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
 </Project>

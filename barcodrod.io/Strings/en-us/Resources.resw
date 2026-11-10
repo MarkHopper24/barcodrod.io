@@ -129,6 +129,12 @@
   <data name="Shell_Encode.Content" xml:space="preserve">
     <value>Create</value>
   </data>
+  <data name="Shell_Inventory.Content" xml:space="preserve">
+    <value>Inventory</value>
+  </data>
+  <data name="Inventory_Title.Text" xml:space="preserve">
+    <value>Inventory</value>
+  </data>
   <data name="Settings_Personalization.Text" xml:space="preserve">
     <value>Personalization</value>
   </data>

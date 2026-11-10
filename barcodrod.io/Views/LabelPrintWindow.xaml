@@ -1,0 +1,39 @@
+<Window x:Class="barcodrod.io.Views.LabelPrintWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid x:Name="Root" Padding="16" RowSpacing="12" ColumnSpacing="16" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <StackPanel Grid.ColumnSpan="2" Spacing="4">
+            <TextBlock Text="Print barcode labels" Style="{StaticResource TitleTextBlockStyle}"/>
+            <TextBlock x:Name="JobSummary" Text="Preparing preview…" AutomationProperties.AutomationId="LabelSummary" TextWrapping="Wrap"/>
+        </StackPanel>
+        <ScrollViewer Grid.Row="1">
+            <StackPanel x:Name="OptionsPanel" Spacing="12" Padding="0,0,8,8">
+                <ComboBox x:Name="Preset" Header="Label stock" HorizontalAlignment="Stretch" SelectionChanged="PresetChanged" AutomationProperties.AutomationId="LabelPreset"/>
+                <ComboBox x:Name="Format" Header="Code format" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="LabelFormat"/>
+                <TextBox x:Name="Payload" Header="Barcode content" AutomationProperties.AutomationId="LabelPayload"/>
+                <TextBlock Text="Use {Barcode}, {SKU}, {Name}, {Location}, {Lot}, {SerialNumber}, or {Custom.field-name}. A blank barcode uses the SKU." Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"/>
+                <ComboBox x:Name="QuantityMode" Header="Label quantities" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="LabelQuantityMode"/>
+                <NumberBox x:Name="Copies" Header="Copies per item" Minimum="1" Maximum="1000" SpinButtonPlacementMode="Compact" AutomationProperties.AutomationId="LabelCopies"/>
+                <NumberBox x:Name="Skip" Header="Used positions on first sheet" Minimum="0" SpinButtonPlacementMode="Compact" AutomationProperties.AutomationId="LabelSkip"/>
+                <StackPanel x:Name="FieldsPanel" Spacing="4"/>
+                <Expander Header="Paper, dimensions, and calibration" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="LabelDimensions">
+                    <StackPanel x:Name="DimensionsPanel" Spacing="8"/>
+                </Expander>
+                <Button x:Name="UpdateButton" Content="Update preview" Click="UpdatePreview" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="LabelUpdate"/>
+                <TextBlock Text="Print at 100% / actual size, with browser headers and footers off. Match the printer's paper size to this preview. Use offsets to calibrate your label stock." Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </ScrollViewer>
+        <WebView2 x:Name="Preview" Grid.Row="1" Grid.Column="1" AllowDrop="False" AutomationProperties.AutomationId="LabelPreview"/>
+        <Grid Grid.Row="2" Grid.ColumnSpan="2" RowSpacing="8">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <InfoBar x:Name="Status" IsClosable="False" AutomationProperties.AutomationId="LabelStatus"/>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button x:Name="PdfButton" Content="Save PDF" Click="SavePdf" IsEnabled="False" AutomationProperties.AutomationId="LabelSavePdf"/>
+                <Button x:Name="PrintButton" Content="Print…" Click="Print" IsEnabled="False" Style="{StaticResource AccentButtonStyle}" AutomationProperties.AutomationId="LabelPrint"/>
+                <Button x:Name="CloseButton" Content="Close" Click="CloseWindow" AutomationProperties.AutomationId="LabelClose"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

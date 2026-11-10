@@ -33,12 +33,13 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <StackPanel Margin="10,10,0,0" Padding="0,0,10,0" x:Name="ButtonStackPanel" Grid.Row="0" Grid.Column="0"
                     Width="Auto" VerticalAlignment="Top" Height="Auto">
             <Button x:Name="SelectAllButton" ToolTipService.ToolTip="Select all items in history."
-                    Tapped="SelectAllHistory" HorizontalAlignment="Stretch" Margin="0,0,0,5" Height="Auto">
+                    Click="SelectAllHistory" HorizontalAlignment="Stretch" Margin="0,0,0,5" Height="Auto">
                 <StackPanel Orientation="Horizontal">
                     <SymbolIcon Symbol="SelectAll" />
                     <TextBlock Text="Select All" Margin="5" />
@@ -60,6 +61,8 @@
 
             </DropDownButton>
 
+            <Button x:Name="HistoryPrintButton" Content="Print selected labels" Click="PrintSelectedLabels" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                    AutomationProperties.AutomationId="HistoryPrint" />
             <ToggleSwitch x:Name="GalleryViewToggle"
                           Header="Gallery view"
                           Toggled="ToggleHistoryView"
@@ -67,7 +70,7 @@
 
             <Button x:Name="DeleteFromHistoryButton"
                     ToolTipService.ToolTip="Delete the selected items from your history" VerticalAlignment="Bottom"
-                    HorizontalAlignment="Stretch" Margin="0,0,0,5" Tapped="DeleteFromHistory" Height="Auto">
+                    HorizontalAlignment="Stretch" Margin="0,0,0,5" Click="DeleteFromHistory" Height="Auto">
                 <StackPanel Orientation="Horizontal">
                     <SymbolIcon Symbol="Delete" Foreground="Red" Opacity=".5" />
                     <TextBlock Text="Delete Selected" Margin="5" IsColorFontEnabled="True" />
@@ -81,6 +84,8 @@
         </StackPanel>
         <ListView x:Name="HistoryList" Grid.Row="0" Grid.Column="1" Margin="0,8,10,10" SelectionMode="Multiple"
                   ItemsPanel="{StaticResource HistoryListItemsPanelTemplate}" />
+        <TextBlock x:Name="HistoryEmpty" Grid.Column="1" Text="No barcode history yet. Read or create a code to add it here, then select records to save or print labels." TextWrapping="Wrap" MaxWidth="360" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" AutomationProperties.AutomationId="HistoryEmpty"/>
+        <InfoBar x:Name="HistoryStatus" Grid.Row="1" Grid.ColumnSpan="2" Margin="12" IsOpen="False" Severity="Error" AutomationProperties.AutomationId="HistoryStatus"/>
 
     </Grid>
 

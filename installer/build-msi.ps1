@@ -85,6 +85,7 @@ dotnet publish $project -c $Configuration -r $rid --self-contained true -p:Platf
     -p:AppxPackage=false `
     -p:AppxBundle=Never `
     -p:FileVersion=$Version `
+    -p:AssemblyVersion=$Version `
     -p:InformationalVersion=$Version `
     -p:IncludeSourceRevisionInInformationalVersion=false `
     -o $publishDir

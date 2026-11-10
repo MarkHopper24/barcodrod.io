@@ -10,6 +10,7 @@
     <PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
     <UseWinUI>true</UseWinUI>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <EnableMsixTooling>true</EnableMsixTooling>
@@ -98,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
+    <ProjectReference Include="..\barcodrod.io.Core\barcodrod.io.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AForge.Video" Version="2.2.5" />

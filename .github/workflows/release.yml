@@ -4,6 +4,7 @@ name: build-and-sign-msi
 #
 #   pull_request            -> build only (validates the installer builds)
 #   workflow_dispatch       -> build + SignPath test-signing (validate the signing pipeline)
+#     with build-only=true  -> build and validate both architectures without signing
 #     with production-preflight=true
 #                           -> build + SignPath *release-signing* against the production certificate,
 #                              WITHOUT creating any GitHub Release. Use this to prove the production
@@ -33,6 +34,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      build-only:
+        description: 'Build and validate both MSI architectures without submitting a signing request'
+        type: boolean
+        default: false
       production-preflight:
         description: 'Sign with the production release-signing policy (no GitHub Release is created)'
         type: boolean
@@ -78,11 +83,23 @@ jobs:
           } else {
             $v = "0.0.0.$($env:GITHUB_RUN_NUMBER)"
           }
+          # GitHub uses a prerelease tag; Windows/MSI require four numeric fields.
+          # v2.2.0-experimental.1 therefore stamps the binaries as 2.2.0.1.
+          if ($v -match '^(\d+\.\d+\.\d+)-experimental\.(\d+)$') {
+            $v = "$($Matches[1]).$($Matches[2])"
+          } elseif ($v -notmatch '^\d+\.\d+(?:\.\d+){0,2}$') {
+            throw "Unsupported release version: $v"
+          }
           $parts = @($v.Split('.'))
           while ($parts.Count -lt 4) { $parts += '0' }
-          $v = ($parts[0..3] -join '.')
+          $v = ([version]($parts -join '.')).ToString(4)
           "version=$v" | Out-File $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved version: $v"
+
+      - name: Test inventory
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: dotnet test barcodrod.io.Inventory.Tests/barcodrod.io.Inventory.Tests.csproj -c Release --logger "trx;LogFileName=inventory.trx" --results-directory artifacts/tests
 
       - name: Install WiX ${{ env.WIX_VERSION }}
         run: dotnet tool install --global wix --version ${{ env.WIX_VERSION }}
@@ -115,6 +132,12 @@ jobs:
             }
             if ($info.FileVersion -ne $version) {
               $failures += "$name FileVersion = '$($info.FileVersion)' (expected '$version')"
+            }
+            if ($name -eq 'barcodrod.io.dll') {
+              $assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName((Resolve-Path $path)).Version.ToString(4)
+              if ($assemblyVersion -ne $version) {
+                $failures += "$name AssemblyVersion = '$assemblyVersion' (expected '$version')"
+              }
             }
             Write-Host "$name -> ProductName='$($info.ProductName)' ProductVersion='$($info.ProductVersion)' FileVersion='$($info.FileVersion)'"
           }
@@ -171,7 +194,7 @@ jobs:
   sign-msi:
     # Sign on version tags (release) and on manual dispatch (test). PR builds are validate-only and
     # do not have access to the signing secret (e.g. fork PRs), so they are intentionally excluded.
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && !inputs.build-only)
     needs: build-msi
     runs-on: windows-latest
     strategy:
@@ -255,7 +278,8 @@ jobs:
           foreach ($m in $msis) {
             $sig = Get-AuthenticodeSignature $m.FullName
             Write-Host "$($m.Name) -> signature status: $($sig.Status), signer: $($sig.SignerCertificate.Subject)"
-            if ($sig.Status -eq 'NotSigned') { $failures += "$($m.Name) is not signed" }
+            if ($sig.Status -ne 'Valid') { $failures += "$($m.Name) signature is not valid: $($sig.Status)" }
+            if ($null -eq $sig.TimeStamperCertificate) { $failures += "$($m.Name) has no signing timestamp" }
           }
           if ($failures) {
             $failures | ForEach-Object { Write-Host "::error::$_" }
@@ -310,9 +334,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $assets = Get-ChildItem dist -Recurse -File | ForEach-Object { $_.FullName }
+          $releaseFlags = @()
+          $title = $env:GITHUB_REF_NAME
+          if ($env:GITHUB_REF_NAME -match '-experimental\.\d+$') {
+            $releaseFlags = @('--prerelease', '--latest=false')
+            $title = "$title - Experimental inventory preview"
+          }
           gh release create "$env:GITHUB_REF_NAME" $assets `
-            --title "$env:GITHUB_REF_NAME" `
+            --title "$title" `
             --notes-file release-notes.md `
             --verify-tag `
-            --draft
+            --draft @releaseFlags
+          if ($LASTEXITCODE -ne 0) { throw "Draft release creation failed." }
           Write-Host "::notice::Draft release created. Smoke-test the signed MSIs, then publish with: gh release edit $env:GITHUB_REF_NAME --draft=false"

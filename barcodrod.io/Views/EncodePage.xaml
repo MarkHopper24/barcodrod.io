@@ -53,7 +53,7 @@
                       ScrollViewer.VerticalScrollMode="Enabled">
             <StackPanel Width="Auto" VerticalAlignment="Top" Height="Auto" HorizontalAlignment="Stretch">
                 <Button x:Name="EncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Margin="0,0,0,5" Tapped="CreateBarcode" Height="Auto">
+                        Margin="0,0,0,5" Click="CreateBarcode" Height="Auto">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="Accept" />
                         <TextBlock Text="Create Barcode" Margin="5" />
@@ -65,7 +65,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button x:Name="BulkEncodeButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            Grid.Column="0" Tapped="BulkEncode"
+                            Grid.Column="0" Click="BulkEncode"
                             ToolTipService.ToolTip="Encode barcodes from a .CSV file and save them to a folder.">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon Glyph="&#xe8b7;" />
@@ -293,6 +293,8 @@
 
             <AppBarButton x:Name="SaveImageButton" Icon="Save" Label="Save Image" ToolTipService.ToolTip="Save Image"
                           Click="SaveImage" IsEnabled="False" CornerRadius="4" />
+            <AppBarButton x:Name="PrintCodeButton" Icon="Print" Label="Print labels" ToolTipService.ToolTip="Print barcode labels"
+                          Click="PrintCode" IsEnabled="False" AutomationProperties.AutomationId="EncodePrint" />
 
             <AppBarButton x:Name="OpenImageButton" Icon="OpenWith" Label='Open Image'
                           ToolTipService.ToolTip="Open Image" Click="OpenImage" IsEnabled="False" CornerRadius="4" />

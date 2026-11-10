@@ -69,7 +69,7 @@
                 <Button x:Name="DecodeFromSnippingToolButton"
                         ToolTipService.ToolTip="Launch Snipping Tool and decode the captured screenshot."
                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,5"
-                        Tapped="DecodeFromSnippingTool" Height="Auto">
+                        Click="DecodeFromSnippingTool" Height="Auto">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="Cut" />
                         <TextBlock Text="Snipping Tool" Margin="5" />
@@ -77,7 +77,7 @@
                 </Button>
                 <Button x:Name="DecodeFromClipboardButton" VerticalAlignment="Stretch"
                         ToolTipService.ToolTip="Decode an image from your clipboard." HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromClipboard" Height="Auto">
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Click="DecodeFromClipboard" Height="Auto">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="Paste" />
                         <TextBlock Text="Clipboard Image" Margin="5" />
@@ -85,7 +85,7 @@
                 </Button>
                 <Button x:Name="DecodeFromFileButton" VerticalAlignment="Stretch"
                         ToolTipService.ToolTip="Select an image file to decode." HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Tapped="DecodeFromFilePicker"
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Click="DecodeFromFilePicker"
                         Height="Auto">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="BrowsePhotos" />
@@ -94,14 +94,14 @@
                 </Button>
                 <Button x:Name="ImageFolderButton" HorizontalAlignment="Stretch"
                         ToolTipService.ToolTip="Decode a folder of images and save the results to a .csv file."
-                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Height="Auto" Tapped="BulkDecode">
+                        HorizontalContentAlignment="Center" Margin="0,0,0,5" Height="Auto" Click="BulkDecode">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xe8b7;" />
                         <TextBlock Text="Bulk Decode" Margin="5" />
                     </StackPanel>
                 </Button>
                 <Button HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Margin="0,0,0,5" Tapped="CustomCameraCaptureUI" Height="Auto" Visibility="Collapsed">
+                        Margin="0,0,0,5" Click="CustomCameraCaptureUI" Height="Auto" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="Camera" />
                         <TextBlock x:Name="WebcamButton" Text="Windows Camera" Margin="5" />
@@ -123,7 +123,7 @@
                           HorizontalAlignment="Stretch" Margin="0,0,0,5" Height="Auto"
                           PlaceholderText="Select Resolution" Visibility="Collapsed" />
                 <Button x:Name="ClearButton" ToolTipService.ToolTip="Clear text field and barcode image."
-                        VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,5" Tapped="ClearState"
+                        VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,5" Click="ClearState"
                         Height="Auto">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="Delete" Foreground="Red" Opacity=".5" />

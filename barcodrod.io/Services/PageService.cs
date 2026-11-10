@@ -15,6 +15,7 @@ public class PageService : IPageService
         Configure<EncodePage>("barcodrod.io.ViewModels.EncodeViewModel");
         Configure<SettingsPage>("barcodrod.io.ViewModels.SettingsViewModel");
         Configure<HistoryPage>("barcodrod.io.ViewModels.HistoryViewModel");
+        Configure<InventoryPage>("barcodrod.io.ViewModels.InventoryViewModel");
     }
 
     public Type GetPageType(string key)

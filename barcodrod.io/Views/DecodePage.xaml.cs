@@ -1718,8 +1718,7 @@ public partial class DecodePage : Page
 
     public async void DecodeFromFilePicker(object sender, RoutedEventArgs e)
     {
-        var window = new Window();
-        var hwnd = WindowNative.GetWindowHandle(window);
+        var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new FileOpenPicker();
         picker.FileTypeFilter.Add(".jpg");
         picker.FileTypeFilter.Add(".jpeg");
@@ -1790,8 +1789,7 @@ public partial class DecodePage : Page
     private async void SaveImage(object sender, RoutedEventArgs e)
     {
         var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
-        var window = new Window();
-        var hwnd = WindowNative.GetWindowHandle(window);
+        var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new FileSavePicker();
         picker.SuggestedFileName = timestamp + "." + lastDecodedType;
         picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
@@ -1862,8 +1860,7 @@ public partial class DecodePage : Page
     private async void SaveText(object sender, RoutedEventArgs e)
     {
         var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
-        var window = new Window();
-        var hwnd = WindowNative.GetWindowHandle(window);
+        var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new FileSavePicker();
         picker.SuggestedFileName = timestamp;
 
@@ -1883,8 +1880,7 @@ public partial class DecodePage : Page
     private async void SaveCSV(object sender, RoutedEventArgs e)
     {
         var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
-        var window = new Window();
-        var hwnd = WindowNative.GetWindowHandle(window);
+        var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new FileSavePicker();
         picker.SuggestedFileName = timestamp;
 
@@ -2158,8 +2154,7 @@ public partial class DecodePage : Page
 
     private async Task<string> BulkDecodePicker()
     {
-        var window = new Window();
-        var hwnd = WindowNative.GetWindowHandle(window);
+        var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
         var folderPicker = new FolderPicker();
         folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
         InitializeWithWindow.Initialize(folderPicker, hwnd);

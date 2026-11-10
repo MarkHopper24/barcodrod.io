@@ -29,13 +29,15 @@ public sealed partial class EncodePage : Page
     private Color lastBgColor;
     private string lastSavedlocation;
     private string lastEncodedType;
+    private string _lastEncodedText = "";
     private Bitmap? _logoBitmap;
     private string? _bulkEncodeOutputPath;
     private bool _autoEncodeOnPaste;
 
     private void SizeChangedEventHandler(object sender, SizeChangedEventArgs args)
     {
-        BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
+        BarcodeViewer.MinHeight = 0;
+        BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
     }
 
     public EncodePage()
@@ -258,9 +260,11 @@ public sealed partial class EncodePage : Page
 
                 BitmapToImageSource(barcode);
                 BarcodeViewer.MaxHeight = TxtActivityLog.ActualHeight;
-                BarcodeViewer.MinHeight = TxtActivityLog.ActualHeight;
+                BarcodeViewer.MinHeight = 0;
                 lastEncoded = barcode;
                 SaveImageButton.IsEnabled = true;
+                PrintCodeButton.IsEnabled = true;
+                _lastEncodedText = TxtActivityLog.Text;
                 CopyImageButton.IsEnabled = true;
                 ChangeBarcodeColorButton.IsEnabled = true;
                 LogoOverlayButton.IsEnabled = writer.Format == BarcodeFormat.QR_CODE;
@@ -281,6 +285,7 @@ public sealed partial class EncodePage : Page
                 EncodeError.IsOpen = true;
                 EncodeError.Severity = InfoBarSeverity.Error;
                 SaveImageButton.IsEnabled = false;
+                PrintCodeButton.IsEnabled = false;
                 CopyImageButton.IsEnabled = false;
                 ChangeBarcodeColorButton.IsEnabled = false;
                 LogoOverlayButton.IsEnabled = false;
@@ -451,12 +456,24 @@ public sealed partial class EncodePage : Page
         }
     }
 
+    private async void PrintCode(object sender, RoutedEventArgs e)
+    {
+        if (lastEncoded == null || string.IsNullOrEmpty(_lastEncodedText)) return;
+        try
+        {
+            await LabelPrintWindow.OpenAsync(new List<barcodrod.io.Core.Inventory.InventoryItem>
+            {
+                new() { SKU = "Code", Name = "Barcode", Barcode = _lastEncodedText, BarcodeFormat = lastEncodedType }
+            }, new barcodrod.io.Core.Inventory.LabelOptions { ShowName = false, ShowSKU = false });
+        }
+        catch (Exception ex) { EncodeError.Message = ex.Message; EncodeError.Severity = InfoBarSeverity.Error; EncodeError.IsOpen = true; }
+    }
+
     private async void SaveImage(object sender, RoutedEventArgs e)
     {
         var timestamp = DateTime.Now.ToString("MMddyy.HHmm");
 
-        var window = new Window();
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new Windows.Storage.Pickers.FileSavePicker();
         picker.SuggestedFileName = timestamp + "." + BarcodeSelector.SelectedItem;
 
@@ -601,8 +618,7 @@ public sealed partial class EncodePage : Page
 
     private async void SelectLogo(object sender, RoutedEventArgs e)
     {
-        var window = new Window();
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new FileOpenPicker();
         picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
         picker.FileTypeFilter.Add(".png");
@@ -712,8 +728,7 @@ public sealed partial class EncodePage : Page
         }
 
         // Pick CSV file
-        var window = new Window();
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         var csvPicker = new FileOpenPicker();
         csvPicker.FileTypeFilter.Add(".csv");
         WinRT.Interop.InitializeWithWindow.Initialize(csvPicker, hwnd);

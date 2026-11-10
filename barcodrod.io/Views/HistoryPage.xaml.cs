@@ -18,6 +18,14 @@ public sealed partial class HistoryPage : Page
     private bool _isGalleryView;
     private bool _isInitializingHistoryViewToggle;
 
+    private async void PrintSelectedLabels(object sender, RoutedEventArgs e)
+    {
+        var selected = HistoryList.SelectedItems.OfType<ListViewItem>().Select(i => i.Tag).OfType<barcodrod.io.Core.Inventory.InventoryItem>().ToList();
+        if (selected.Count == 0) return;
+        try { await LabelPrintWindow.OpenAsync(selected, new barcodrod.io.Core.Inventory.LabelOptions { ShowName = false, ShowSKU = false }); }
+        catch (Exception ex) { HistoryStatus.Message = ex.Message; HistoryStatus.IsOpen = true; }
+    }
+
     public HistoryPage()
     {
         InitializeComponent();
@@ -35,8 +43,7 @@ public sealed partial class HistoryPage : Page
 
 
         var timestamp = DateTime.Now.ToString("MM.dd.yy.HHmm");
-        var window = new Window();
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new Windows.Storage.Pickers.FolderPicker();
         picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
 
@@ -110,8 +117,7 @@ public sealed partial class HistoryPage : Page
         if (selectedItems.Count == 0) return;
 
         var timestamp = DateTime.Now.ToString("MM.dd.yy.HHmm");
-        var window = new Window();
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new Windows.Storage.Pickers.FolderPicker();
         picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
 
@@ -171,8 +177,7 @@ public sealed partial class HistoryPage : Page
         if (selectedItems.Count == 0) return;
 
         var timestamp = DateTime.Now.ToString("MM.dd.yy.HHmm");
-        var window = new Window();
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
         var picker = new Windows.Storage.Pickers.FolderPicker();
         picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary;
 
@@ -532,6 +537,12 @@ public sealed partial class HistoryPage : Page
 
 
                             listViewItem.Content = grid;
+                            var codeFormat = imageFileNameNoExtension.Split('.')[0];
+                            listViewItem.Tag = new barcodrod.io.Core.Inventory.InventoryItem
+                            {
+                                SKU = "History-" + i, Name = codeFormat, Barcode = textContent,
+                                BarcodeFormat = barcodrod.io.Core.Inventory.InventoryLabels.Formats.Contains(codeFormat) ? codeFormat : "QR_CODE"
+                            };
 
                             HistoryList.Items.Add(listViewItem);
                             i++;
@@ -572,6 +583,10 @@ public sealed partial class HistoryPage : Page
 
     private void RefreshCounters()
     {
+        var hasSelection = HistoryList.SelectedItems.Count > 0;
+        HistoryPrintButton.IsEnabled = SaveSelectedButton.IsEnabled = DeleteFromHistoryButton.IsEnabled = hasSelection;
+        SelectAllButton.IsEnabled = HistoryList.Items.Count > 0;
+        HistoryEmpty.Visibility = HistoryList.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         HistoryCountTextBlock.Text = "Count: " + HistoryList.Items.Count;
         HistoryCountSelectedTextBlock.Text = "Selected: " + HistoryList.SelectedItems.Count;
     }

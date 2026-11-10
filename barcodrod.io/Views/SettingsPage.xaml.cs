@@ -153,6 +153,7 @@ public sealed partial class SettingsPage : Page
             {
                 "barcodrod.io.ViewModels.EncodeViewModel" => 1,
                 "barcodrod.io.ViewModels.HistoryViewModel" => 2,
+                "barcodrod.io.ViewModels.InventoryViewModel" => 3,
                 _ => 0
             };
 
@@ -423,6 +424,7 @@ public sealed partial class SettingsPage : Page
         {
             1 => "barcodrod.io.ViewModels.EncodeViewModel",
             2 => "barcodrod.io.ViewModels.HistoryViewModel",
+            3 => "barcodrod.io.ViewModels.InventoryViewModel",
             _ => "barcodrod.io.ViewModels.DecodeViewModel"
         };
 

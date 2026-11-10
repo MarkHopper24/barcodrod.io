@@ -51,9 +51,12 @@ public partial class App : Application
 
                 // Core Services
                 services.AddSingleton<IFileService, FileService>();
+                services.AddSingleton<InventoryService>();
+                services.AddSingleton<InventoryViewModel>();
 
                 // Views and ViewModels
                 services.AddTransient<HistoryPage>();
+                services.AddTransient<InventoryPage>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SettingsPage>();
                 services.AddTransient<EncodePage>();

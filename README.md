@@ -83,6 +83,30 @@ Decode only:
 ### History
 - View, manage, and export history of QR codes and barcodes read and created on your PC. (Can be disabled).
 
+### Inventory
+- The fourth navigation tab tracks personal belongings, collections, equipment, supplies, or business inventory. Add an item with just a name: it starts with quantity one and a generated, editable item ID. The ID is stored as `SKU` in existing inventory files and workbooks, preserving compatibility.
+- The basic form covers name, item ID, quantity, unit, and location. Expand optional sections for barcodes/organization, reservations/quantity targets, value/sourcing, notes, and custom fields. Commercial fields are optional and empty values stay out of the details view.
+- **Update quantity** offers Add quantity, Remove quantity, Set total quantity, Reserve quantity, Release reservation, Use reserved quantity, and Move location. Exact counts start at the current total and show the resulting balance. Every saved change is recorded in activity history. Moving a location applies to the entire item's quantity; use separate IDs for quantities in separate places.
+- **Scan shortcuts:** choose Look up, Add quantity, or Remove quantity; set the quantity and an optional person/project/reference; scan or paste an item ID/barcode into Search and press Enter. Each Add/Remove scan immediately records that quantity change. This input path supports scanners that type codes as keyboard input; the Read tab's camera/image decoding does not automatically change inventory quantities.
+- Search by name, ID, barcode, category, location, notes, or custom values. Filter unavailable or expired items and items below a configured minimum; minimum warnings are off when the minimum is zero.
+- **Bulk options:** select multiple items for label printing, export, or archive/restore; Select all shown respects the current filtered view. Excel/CSV imports can add or update many records in one reviewed operation. Quantity changes apply to one item at a time, including repeated scans.
+- Import `.xlsx`, CSV, or TSV with configurable worksheet/header row, column mapping, delimiters, number/date culture, and custom columns. Imports show a review before merging matching SKUs. Exports use the selected records, or the current filtered view when nothing is selected.
+- Back up and restore the complete inventory, movement log, and configuration. Local saves are atomic and keep the previous snapshot as `inventory.json.bak`; competing app instances cannot silently overwrite each other's changes. Restore is available even if inventory loading fails.
+
+**Excel integration:** Choose **Excel** to create a linked workbook or connect an existing `.xlsx` file. **Save to Excel** writes app changes; **Sync both ways** also imports Excel edits. Optional automatic sync runs after saved inventory changes. Sync compares each mapped field with its last synchronized value, merges compatible edits, and stops on conflicting edits. Other worksheets, unmapped columns, and existing formulas are preserved; mapped formula cells cannot be overwritten. Keep records in the sheet and use `Archived` for intentional removals.
+
+File-based import, export, and synchronization work without Excel installed. With desktop Microsoft Excel, an open workbook can be read and saved directly, including its pending edits; **Open record in Excel** finds the current SKU row and selects it. Saving an open workbook also saves its other pending changes. SKU is the workbook record key and cannot be renamed while connected. Legacy `.xls` and macro-enabled `.xlsm` files are not modified. Workbook saves keep a `.barcodrod.bak` backup (or `.barcodrod.bak.xlsx` for an open Excel workbook). New exports include a movement-log worksheet; use **Export movement log** for a fresh audit export.
+
+### Barcode label printing
+- Print from Inventory, Create, or selected History records. Label printing renders black codes on white stock for consistent scanning.
+- Presets cover Avery 5160/5260 (30 labels), 5163/5263 (10), L7160 (A4, 21), L7159 (A4, 24), and 2×1, 4×2, or 4×6-inch thermal labels. Paper size, label size, rows/columns, margins, gaps, and calibration offsets can also be customized in millimeters.
+- Choose copies per item or quantities based on on-hand, available, or reorder stock; skip used positions on the first sheet. Customize code format, payload templates, and printed name/SKU/location/price/lot/expiry fields. A blank barcode falls back to the SKU. Example payload: `{SKU}:{Lot}` or `{Custom.Brand}`.
+- Review the page preview, print through the printer dialog, or save an exact-size PDF. Invalid or excessively dense codes and layouts that do not fit are rejected before printing. Print at **100% / actual size**, match the printer's paper size, and turn browser headers/footers off.
+
+Inventory can also be selected as the default launch page in Settings. Scan shortcuts and Excel workbook controls have separate expandable sections. Item details and recent activity remain available through the toolbar menu on narrow windows. For isolated inventories or UI testing, launch with `--inventory-data-directory <absolute-folder-path>`; otherwise the normal per-user app data folder is used.
+
+Inventory tests: `dotnet test barcodrod.io.Inventory.Tests/barcodrod.io.Inventory.Tests.csproj`. The repeatable desktop check is `scripts/Test-InventoryUI.ps1`; it requires a running app and an empty isolated inventory folder. Its default UI Automation mode tests scan submission without taking keyboard focus; add `-KeyboardInput` to exercise actual keyboard input on an unlocked desktop. `scripts/Test-InventoryIntegrationUI.ps1` continues with workbook conflicts, bulk import, backup restore, Read/Create/History, and compact layouts, using the first script's fixture and a Python runtime with openpyxl. Live Excel navigation and physical scanner/printer validation require the corresponding application/hardware.
+
 ### Interface
 - Built natively for Windows using WinUI3 and the Windows App SDK; offering a simple, familiar, and fast user interface. 
 - Supports light and dark themes, as well as three different backdrop options.

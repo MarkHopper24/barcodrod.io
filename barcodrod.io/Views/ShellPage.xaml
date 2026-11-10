@@ -27,7 +27,7 @@
         <NavigationView
             x:Name="NavigationViewControl"
             Canvas.ZIndex="0"
-            OpenPaneLength="125"
+            OpenPaneLength="152"
             IsBackButtonVisible="Collapsed"
             IsBackEnabled="{x:Bind ViewModel.IsBackEnabled, Mode=OneWay}"
             SelectedItem="{x:Bind ViewModel.Selected, Mode=OneWay}"
@@ -51,6 +51,12 @@
                                     helpers:NavigationHelper.NavigateTo="barcodrod.io.ViewModels.HistoryViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE81C;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Uid="Shell_Inventory" AutomationProperties.AutomationId="NavInventory"
+                                    helpers:NavigationHelper.NavigateTo="barcodrod.io.ViewModels.InventoryViewModel">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE7B8;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
